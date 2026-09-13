@@ -271,15 +271,6 @@ body{
 .brand i{ font-style:normal; font-weight:500; font-size:9.5px; letter-spacing:.295em; color:var(--coral); }
 .mono{ font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10px; letter-spacing:.16em; color:var(--ink-soft); }
 
-/* título grande de bienvenida */
-.hero-title{
-  position:absolute; top:40%; left:50%; transform:translate(-50%,-50%);
-  width:min(90vw,900px); text-align:center; pointer-events:none;
-  font-family:"Metropolis",system-ui,sans-serif; font-weight:600;
-  font-size:clamp(36px,7vw,104px); line-height:1.02; letter-spacing:-.01em;
-  color:var(--ink); text-wrap:balance;
-}
-
 nav.dist{ pointer-events:auto; display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
 nav.dist button{
   appearance:none; background:none; border:0; cursor:pointer; color:var(--ink-soft);
@@ -972,7 +963,6 @@ html.shot #shock.frozen .shockring{ animation-play-state:paused; }
   </svg>
 
   <div class="hud">
-    <div class="hero-title">me gusta Eduardo</div>
     <div class="hud-top">
       <a class="brand" href="#" onclick="return false;" aria-label="Remote &amp; Partners">
         <svg class="mark" viewBox="320 30 2360 2640" aria-hidden="true">

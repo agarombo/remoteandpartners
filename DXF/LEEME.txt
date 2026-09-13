@@ -1,0 +1,39 @@
+BASE EDITABLE EN DXF — Remote & Partners
+
+  RP-S-101-FOUNDATION.dxf        fundaciones
+  RP-S-201-FLOOR-FRAMING.dxf     entramado de entrepiso
+  RP-A-101-FIRST-FLOOR.dxf       planta baja
+  RP-E-101-ELECTRICAL.dxf        eléctrica
+
+Formato DXF R12, texto plano. Abre en cualquier AutoCAD.
+UNA UNIDAD DE DIBUJO = UN PIE.
+
+CAPAS
+  WALL   muros, como polilíneas cerradas (se mueven de una pieza)
+  FND    zapatas, losa, viguetas del crawl
+  FRAM   viguetas, vigas y dinteles
+  FURN   mobiliario y aparatos
+  ELEC   bocas, puntos de luz e interruptores
+  DOOR   hojas y barridos
+  WIN    huecos de ventana
+  ROOM   nombre y superficie de cada local
+  GRID   ejes
+  NOTE   pie de lámina
+
+QUÉ EDITAR
+  Movés muros, cambiás huecos, añadís o quitás locales.
+  No hace falta que dibujes cotas ni mobiliario: eso lo regenera
+  el sitio solo a partir de la geometría, y así siempre cuadra.
+
+QUÉ NO TOCAR
+  Los nombres de capa. Son el contrato para poder leerlo de vuelta.
+
+CUANDO LO DEVUELVAS
+  Guardalo como DXF (no DWG) y pasámelo. Regenero la planta y,
+  con ella, el corte 3D del edificio: salen de los mismos datos.
+
+VOLVER A GENERARLO
+  Abrí index.html en Chrome (el archivo local, no el enlace del
+  artifact: ese visor bloquea las descargas por seguridad).
+  SERVICES -> OPEN DRAWING -> elegí la lámina -> DOWNLOAD DXF
+  Cada lámina baja su propio archivo.

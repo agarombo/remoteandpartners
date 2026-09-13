@@ -1,7 +1,9 @@
 # Performance rebuild
 
-The site retains Vite and native JavaScript. Final initial JavaScript is 53.3 KB
-(about 47% smaller than the 100.6 KB baseline). This rebuild replaces the application
+The site retains Vite and native JavaScript. The shared initial JavaScript is
+54.9 KB (about 45% smaller than the 100.6 KB baseline). WebKit additionally loads
+an approximately 7 KB rendering helper when normal-motion travel needs it.
+This rebuild replaces the application
 controller with independent features, explicit navigation state, cancellable
 transitions and a shared camera/renderer. It preserves the existing content,
 geometry, five appearances, languages, sound controls, contact flow, drawings,
@@ -15,6 +17,9 @@ BIM viewer, territory, capture URLs and static DXF downloads.
   projection helper.
 - Features own their pending work. Leaving a view cancels its timers; a later
   navigation supersedes an earlier module load or queued territory destination.
+- Network opens its overview and selects a person only after an explicit choice.
+  Work approaches the US map directly, without the former intermediate zoom-out
+  and repositioning. City geometry remains visible as it travels off screen.
 - Camera updates use elapsed time and one animation scheduler. During travel,
   a composited HTML layer handles pan/zoom; SVG coordinates are committed at rest.
   Labels retain screen coordinates and interactive geometry remains available. Cached bounds
@@ -44,6 +49,9 @@ BIM viewer, territory, capture URLs and static DXF downloads.
   assets. No runtime dependency was added; Playwright is a development dependency.
 
 ## Measurements
+
+The table below describes the intermediate rebuild, before the final Chrome
+camera and Safari cache changes. It is not a frame-rate claim for the final build.
 
 Baseline: local commit `32e86c7` (the first Vite refactor). Three sequential runs
 per version and viewport, local static servers, cold browser contexts, Chrome
@@ -98,10 +106,34 @@ those last changes.
 - Normal-motion frames were captured in Chrome at DPR 2 (109 desktop and 110
   mobile frames; the SVG camera remained unchanged during outward travel), and the reported local
   Chrome preview was inspected directly during the Services-to-city transition.
-- WebKit installation was attempted but the browser download endpoints timed
-  out, including the network-enabled retry. Safari/WebKit and physical devices
-  therefore remain unverified. Audible output and live FTP hosting were not
-  validated by the automated suite.
+- WebKit installation initially timed out; a compatible official WebKit 26.6
+  archive (Playwright build 2359) was subsequently obtained. Browser checks use
+  that engine; it is not identical to the user's Safari 27 or a physical iPhone.
+  Audible output and live FTP hosting were not validated by the automated suite.
 
-No files were pushed or deployed. The existing FTP workflow still builds and
-uploads `dist/` only after an explicitly authorized push to `main`.
+## Safari rendering
+
+WebKit uses a cached overview plus an optional destination-resolution crop during
+travel. Each bitmap is limited to approximately four megapixels and a 4096-pixel
+edge (eight megapixels total, about 32 MiB of RGBA pixels, excluding browser
+overhead). The crop replaces its rectangle in the overview to avoid doubling
+translucent shadows. The live SVG supplies sharp geometry and interactions at
+rest; WebKit's camera anchor completes with the zoom instead of settling for
+additional seconds afterward.
+
+Snapshots reuse the shared stylesheet and embedded local fonts. Content changes,
+scene modes, appearance and language invalidate the cache; camera/culling writes
+and transient hover classes do not. This avoids expensive snapshot jobs when
+the pointer moves between buildings. Resize, navigation cancellation, capture
+and reduced-motion changes discard obsolete work; a failed optional cache falls
+back to the existing live camera.
+
+Safari keeps decorative haze in the static background and pauses ambient island,
+aircraft, walker and beacon motion. Distant-island blur is disabled in its city
+overview. Chrome retains its established camera and decorative motion. Cached
+rendering still has preparation and SVG handoff costs: functional checks alone
+do not establish smoothness on every device, and user-reported Safari problems
+must be checked in normal motion and at high DPR.
+
+The local QA workflow does not publish. The existing FTP workflow builds and
+uploads `dist/` on a push to `main`, which requires explicit permission for that push.

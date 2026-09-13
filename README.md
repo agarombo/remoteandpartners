@@ -36,6 +36,9 @@ El script sirve `dist/` temporalmente en `127.0.0.1:4182`, prueba los controles
 y guarda capturas/informes locales en `browser-results/` (fuera de Git).
 No envía el formulario ni publica archivos. Admite `--webkit` si se instaló
 esa versión de Playwright con `npx playwright install webkit`.
+También acepta `--executable-path RUTA` para una instalación compatible de WebKit.
+Las pruebas de WebKit comprueban además la caché de zoom, su resolución de
+detalle y que los cambios de hover no reconstruyan la escena.
 Para comparar dos previews estáticos, ejecutar
 `node scripts/browser-profile.mjs URL_BASE URL_NUEVA`; las mediciones son
 secuenciales, con tres repeticiones por viewport y CPU limitada a 4×.
@@ -47,6 +50,8 @@ secuenciales, con tres repeticiones por viewport y CPU limitada a 4×.
 - `src/geometry/`: primitivas y geometría compartida; los planos/BIM se cargan al abrirlos.
 - `src/app.js`: arranque, navegación y entrada de teclado/puntero.
 - `src/core/`: cámara, escena, sonido y tareas cancelables.
+- `src/core/raster.js`: caché de viaje para WebKit, con un recorte de detalle
+  a la resolución de destino; se carga solamente cuando ese motor la necesita.
 - `src/features/`: visores independientes con apertura, actualización y cierre.
 - `src/motion.js`: planificación de fotogramas y actualización de transforms.
 - `src/site.css`: estilos y aspectos existentes.

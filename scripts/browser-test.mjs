@@ -258,15 +258,100 @@ try {
     if (engine === "webkit") {
       assert.ok(
         traveling.every(
-          (frame) => frame.cached && frame.pixels <= 4 * 1024 * 1024 + 4096,
+          (frame) => frame.cached && frame.pixels <= 8 * 1024 * 1024 + 8192,
         ),
-        "WebKit moves a bounded bitmap throughout outward travel",
+        "WebKit moves bounded overview/detail bitmaps throughout outward travel",
       );
       await page.waitForFunction(
         () =>
           document.documentElement.classList.contains("still") &&
           !document.querySelector(".raster-layer") &&
           document.getElementById("stage").style.opacity !== "0",
+      );
+      await page.evaluate(() => {
+        window.hoverCacheJobs = 0;
+        window.hoverObserver = new MutationObserver((records) => {
+          window.hoverCacheJobs += records.filter(
+            (record) => record.attributeName === "data-raster",
+          ).length;
+        });
+        window.hoverObserver.observe(document.getElementById("cameraLayer"), {
+          attributes: true,
+        });
+      });
+      for (const id of ["services", "work", "team", "about"]) {
+        await page.locator(`#nav [data-island="${id}"]`).hover();
+        await page.waitForTimeout(80);
+      }
+      await page.mouse.move(width / 2, 20);
+      await page.waitForTimeout(300);
+      assert.equal(
+        await page.evaluate(() => {
+          window.hoverObserver.disconnect();
+          return window.hoverCacheJobs;
+        }),
+        0,
+        "Hover highlights must not rebuild the Safari scene cache",
+      );
+      await page.locator('#nav [data-island="work"]').click();
+      await page.waitForFunction(
+        () =>
+          document.querySelector('.raster-layer[data-scene="territory"]') &&
+          document.getElementById("cameraLayer").dataset.raster === "ready",
+      );
+      const workFrames = await page.evaluate(
+        () =>
+          new Promise((resolve) => {
+            const frames = [];
+            function tick() {
+              const layer = document.querySelector(".raster-layer");
+              const details = [...document.querySelectorAll(".camera-raster")];
+              frames.push({
+                scale:
+                  layer &&
+                  new DOMMatrix(layer.style.transform).a *
+                    +layer.dataset.pixelScale,
+                cityOpacity: getComputedStyle(
+                  document.getElementById("islands"),
+                ).opacity,
+                detailPixelsPerCSSPixel:
+                  details.length > 1
+                    ? details[1].width /
+                      details[1].getBoundingClientRect().width
+                    : 0,
+                still: document.documentElement.classList.contains("still"),
+              });
+              if (!frames.at(-1).still) requestAnimationFrame(tick);
+              else resolve(frames);
+            }
+            requestAnimationFrame(tick);
+          }),
+      );
+      const workTravel = workFrames.filter((frame) => frame.scale !== null);
+      assert.ok(workTravel.length > 5);
+      assert.ok(
+        workTravel.every((frame) => frame.cityOpacity === "1"),
+        "The city stays visible as the direct camera journey carries it off screen",
+      );
+      assert.ok(
+        workTravel.every(
+          (frame, i) => !i || frame.scale >= workTravel[i - 1].scale - 0.001,
+        ),
+        "Work approaches the map directly without first zooming away",
+      );
+      assert.ok(
+        workTravel.some((frame) => frame.detailPixelsPerCSSPixel >= 1),
+        "The map has a destination-resolution detail crop during travel",
+      );
+      await page.screenshot({
+        path: resolve(output, name + "-work-direct.png"),
+      });
+      await page.keyboard.press("Escape");
+      await page.waitForFunction(
+        () =>
+          document.body.dataset.view === "city" &&
+          document.documentElement.classList.contains("still") &&
+          !document.getElementById("cameraLayer").dataset.raster,
       );
       // Cancel an in-flight cache/zoom with a second destination, then resize it.
       await page.locator("#nav .c-purple").click();
@@ -330,9 +415,15 @@ try {
     await fallback.goto("http://127.0.0.1:4182/");
     await fallback.locator("#nav .c-purple").click();
     await fallback.locator('#panel.open [data-lab="autocad"]').waitFor();
-    await fallback.waitForFunction(() => document.documentElement.classList.contains("still"));
+    await fallback.waitForFunction(() =>
+      document.documentElement.classList.contains("still"),
+    );
     assert.equal(await fallback.locator(".camera-raster").count(), 0);
-    assert.notEqual(await fallback.locator("#stage").evaluate(node => node.style.opacity), "0", "A failed optional cache download leaves the live SVG visible");
+    assert.notEqual(
+      await fallback.locator("#stage").evaluate((node) => node.style.opacity),
+      "0",
+      "A failed optional cache download leaves the live SVG visible",
+    );
     await fallback.close();
   }
   await writeFile(

@@ -255,9 +255,8 @@ body{
 .camera-raster{ position:absolute; pointer-events:none; }
 .raster-layer{ position:absolute; inset:0; transform-origin:0 0; will-change:transform; pointer-events:none; }
 .raster-hit{ position:absolute; padding:0; border:0; background:transparent; color:transparent; pointer-events:auto; cursor:pointer; }
-/* Freeze SVG effects only while WebKit prepares/displays the travel bitmap. */
-#stage.rasterizing *{ transition:none !important; animation-play-state:paused !important; }
 .raster-camera .walk, .raster-camera .beacon, .raster-camera .padlight{ animation-play-state:paused; }
+.raster-camera.still body[data-view="city"] .isl.dof:not(.focus){ filter:none; }
 /* todo el trazo de la escena va a grosor constante: si se escalara con la
    cámara desaparecería al alejarse y engordaría al aterrizar */
 #islands polygon, #islands line, #islands path, #islands polyline,
@@ -427,8 +426,9 @@ nav.dist button.c-orange i{ color:var(--orange-3); }
 #usmap, #typo{ opacity:0; pointer-events:none; transition:opacity .9s ease; }
 body.mapmode #usmap, body.mapmode #typo{ opacity:1; pointer-events:auto; }
 #usmap.hide, #typo.hide{ opacity:0 !important; pointer-events:none !important; }
-body.mapmode #islands, body.mapmode #links, body.mapmode #ships,
-body.mapmode #tags, body.mapmode #usernode{ opacity:0; pointer-events:none; }
+/* The direct camera journey carries the city out of view. Do not fade its
+   geometry at the click; both places must remain visible during the move. */
+body.mapmode #tags{ opacity:0; pointer-events:none; }
 #islands, #links, #ships{ transition:opacity .8s ease; }
 
 .st{ cursor:default; }

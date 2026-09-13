@@ -59,6 +59,10 @@ de comprobar que no participa en esos flujos, incluidos los imports diferidos.
   estilos y módulos; usá un único scheduler y pausá trabajo decorativo cuando
   no aporte a la vista. Si una adaptación elimina movimiento decorativo,
   documentala y no elimines lógica funcional con ese pretexto.
+- Mantené baratos los eventos frecuentes: hover, movimiento del puntero y
+  scroll no deben disparar serialización de escenas, decodificación de imágenes
+  ni reconstrucciones completas. Separá estado transitorio de interacción del
+  contenido que invalida una caché; medí la respuesta real al puntero.
 
 ### Verificación de cambios de animación
 

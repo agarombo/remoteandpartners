@@ -62,26 +62,58 @@ export function createRaster(stage, layer, request) {
     quality = 0;
   const fonts = embeddedFonts().catch(() => "");
   const css = sceneCSS();
+  // The haze is decorative background, not interactive geometry. Keep its
+  // expensive blur in the static background instead of baking it into every
+  // navigation bitmap. This adaptation is loaded only by WebKit.
+  const clouds = stage.querySelector("#clouds");
+  const backdrop = document.querySelector(".scene-background");
+  const placeClouds = () =>
+    clouds.setAttribute(
+      "transform",
+      `translate(810,535) scale(${window.innerWidth < 820 ? 0.31 : 0.57})`,
+    );
+  placeClouds();
+  backdrop.append(clouds);
   const invalidate = () => {
     revision++;
     request();
   };
   const world = stage.querySelector("#world");
+  const withoutHover = (value) =>
+    (value || "")
+      .split(/\s+/)
+      .filter((name) => name && name !== "hot")
+      .sort()
+      .join(" ");
+  const withoutCulling = (value) =>
+    (value || "").replace(/visibility\s*:[^;]*(?:;|$)/g, "").trim();
   new window.MutationObserver((records) => {
     // Camera/culling writes do not change the artwork in the reusable cache.
     if (
-      records.some(
-        (record) =>
-          !(record.target === world && record.attributeName === "transform") &&
-          !(
-            record.target.matches?.(".isl") &&
-            ["style", "data-offscreen"].includes(record.attributeName)
-          ),
-      )
+      records.some((record) => {
+        const { target, attributeName, oldValue } = record;
+        if (target === world && attributeName === "transform") return false;
+        if (attributeName === "data-offscreen") return false;
+        // Hover highlights belong to the live SVG, not a fresh bitmap job.
+        if (
+          attributeName === "class" &&
+          withoutHover(oldValue) === withoutHover(target.getAttribute("class"))
+        )
+          return false;
+        if (
+          attributeName === "style" &&
+          target.matches?.(".isl") &&
+          withoutCulling(oldValue) ===
+            withoutCulling(target.getAttribute("style"))
+        )
+          return false;
+        return true;
+      })
     )
       invalidate();
   }).observe(world, {
     attributes: true,
+    attributeOldValue: true,
     childList: true,
     subtree: true,
     characterData: true,
@@ -110,7 +142,6 @@ export function createRaster(stage, layer, request) {
   function rest() {
     if (!active) return;
     stage.style.opacity = "";
-    stage.classList.remove("rasterizing");
     surface.remove();
     active = false;
     delete layer.dataset.raster;
@@ -122,8 +153,8 @@ export function createRaster(stage, layer, request) {
     }
   }
   function clear() {
+    placeClouds();
     rest();
-    stage.classList.remove("rasterizing");
     release(canvas);
     release(detail);
     canvas = detail = null;
@@ -158,9 +189,7 @@ export function createRaster(stage, layer, request) {
     const { factor, left, top, width, height } = viewport;
     const origin = document.querySelector(".app").getBoundingClientRect();
     const mapmode = document.body.classList.contains("mapmode");
-    const hidden = mapmode
-      ? "#islands,#links,#ships,#usernode"
-      : "#usmap,#typo";
+    const hidden = mapmode ? ".hide" : "#usmap,#typo";
     const copy = stage.cloneNode(true);
     copy.className.baseVal = document.documentElement.className;
     copy.setAttribute("data-look", document.documentElement.dataset.look);
@@ -345,6 +374,7 @@ export function createRaster(stage, layer, request) {
       surface.replaceChildren(canvas);
       if (detail) surface.append(detail);
       surface.dataset.scene = mapmode ? "territory" : "city";
+      surface.dataset.pixelScale = ratio / base.k;
       for (const island of stage.querySelectorAll('.isl[role="button"]')) {
         if (mapmode) break;
         const box = island.getBoundingClientRect();

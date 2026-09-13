@@ -257,6 +257,7 @@ body{
 .raster-hit{ position:absolute; padding:0; border:0; background:transparent; color:transparent; pointer-events:auto; cursor:pointer; }
 /* Freeze SVG effects only while WebKit prepares/displays the travel bitmap. */
 #stage.rasterizing *{ transition:none !important; animation-play-state:paused !important; }
+.raster-camera .walk, .raster-camera .beacon, .raster-camera .padlight{ animation-play-state:paused; }
 /* todo el trazo de la escena va a grosor constante: si se escalara con la
    cámara desaparecería al alejarse y engordaría al aterrizar */
 #islands polygon, #islands line, #islands path, #islands polyline,

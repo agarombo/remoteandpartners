@@ -168,6 +168,7 @@ function setLook(look) {
   setAttribute(document.documentElement, "data-look", look);
   for (const button of byId("looks").querySelectorAll("button"))
     setAttribute(button, "aria-current", button.dataset.look === look);
+  camera.invalidate();
 }
 function translate() {
   document.documentElement.lang = LANG;
@@ -325,6 +326,7 @@ preference.addEventListener("change", (event) => {
 loop = createFrameLoop((now, elapsed) => {
   const matrix = camera.render(now, elapsed);
   const drift =
+    camera.animateOverview &&
     state.view === "city" &&
     !state.returning &&
     !state.capture &&

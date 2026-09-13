@@ -355,7 +355,6 @@ export function createRaster(stage, layer, request) {
         surface.append(hit);
       }
       if (display || active) {
-        stage.classList.add("rasterizing");
         resume(lastMatrix || base, viewport);
       } else delete layer.dataset.raster;
     } catch (error) {

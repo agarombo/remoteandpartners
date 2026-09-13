@@ -1,6 +1,5 @@
 import { u, dx } from "../content.js";
 import { byId, show, toggle, setAttribute } from "../core/dom.js";
-import { createTasks } from "../core/tasks.js";
 import {
   MAPY,
   WSTATES,
@@ -14,8 +13,7 @@ import { territoryHTML } from "./territory-view.js";
 export function createFeature(app) {
   const panel = byId("panel"),
     map = byId("usmap"),
-    typo = byId("typo"),
-    tasks = createTasks();
+    typo = byId("typo");
   const state = { mode: "territory", sel: null };
   for (const node of [map, typo])
     setAttribute(node, "transform", `translate(0,${MAPY})`);
@@ -26,15 +24,18 @@ export function createFeature(app) {
     toggle(map, "hide", state.mode !== "territory");
     toggle(typo, "hide", state.mode !== "typology");
   }
-  function fit() {
-    app.camera.fit(state.mode === "territory" ? "#usmap .st" : "#typo .ty");
+  function fit(duration) {
+    app.camera.fit(
+      state.mode === "territory" ? "#usmap .st" : "#typo .ty",
+      duration,
+    );
   }
-  function render() {
+  function render(duration) {
     if (!app.state.arrived) return;
     panel.style.setProperty("--accent", "var(--blue-3)");
     panel.innerHTML = territoryHTML(state);
     show(panel, true);
-    fit();
+    fit(duration);
     app.request();
   }
   function setMode(mode) {
@@ -51,33 +52,18 @@ export function createFeature(app) {
   }
   return {
     open() {
-      tasks.reset();
       state.sel = null;
-      app.state.arrived = false;
+      app.state.arrived = true;
       mount();
+      document.body.classList.add("mapmode");
       const label = dx(app.scene.byId("work"), "label");
       byId("ro").textContent = label + " · " + u("extTerr");
-      app.status(label, u("extTerr"));
       app.sound.connect();
-      app.camera.go({ k: 0.15, x: 0, y: 0 }, 1500);
-      tasks.after(1600, () => {
-        app.status(u("leaving"), "...");
-        document.body.classList.add("mapmode");
-        app.camera.go({ k: 0.13, x: 0, y: MAPY * 0.5 }, 1500);
-      });
-      tasks.after(3200, () => {
-        app.status(u("detected"), "");
-        app.sound.linked();
-        app.camera.go(
-          { k: app.camera.mobile() ? 0.92 : 1.25, x: 0, y: MAPY },
-          1600,
-        );
-      });
-      tasks.after(4900, () => {
-        app.status();
-        app.state.arrived = true;
-        render();
-      });
+      app.camera.go(
+        { k: app.camera.mobile() ? 0.92 : 1.25, x: 0, y: MAPY },
+        1400,
+      );
+      render(1400);
     },
     render,
     setMode,
@@ -112,7 +98,6 @@ export function createFeature(app) {
       render();
     },
     close() {
-      tasks.reset();
       app.state.arrived = false;
       app.status();
     },

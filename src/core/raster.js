@@ -141,10 +141,23 @@ export function createRaster(stage, layer, request) {
     layer.dataset.raster = "ready";
   }
   async function prepare({ viewport, base, signal, display = true }) {
+    if (!display) {
+      const transitions = stage
+        .getAnimations({ subtree: true })
+        .filter(
+          (animation) =>
+            animation.playState === "running" &&
+            animation.effect.getTiming().iterations !== Infinity,
+        );
+      await Promise.all(
+        transitions.map((animation) => animation.finished.catch(() => {})),
+      );
+      signal.throwIfAborted();
+    }
     const version = revision;
     const fontCSS = await fonts;
     signal.throwIfAborted();
-    stage.classList.add("rasterizing");
+    if (display) stage.classList.add("rasterizing");
     layer.dataset.raster = "preparing";
     // Let the navigation/panel update reach the screen before copying the scene.
     await pause();
@@ -240,6 +253,7 @@ export function createRaster(stage, layer, request) {
       image.src = url;
       await image.decode();
       signal.throwIfAborted();
+      if (!display && version !== revision) return;
       const next = document.createElement("canvas");
       next.width = Math.max(1, Math.round(widthPx * ratio));
       next.height = Math.max(1, Math.round(heightPx * ratio));
@@ -280,6 +294,7 @@ export function createRaster(stage, layer, request) {
     } finally {
       signal.removeEventListener("abort", abort);
       window.URL.revokeObjectURL(url);
+      if (!display && !signal.aborted && !active) delete layer.dataset.raster;
     }
   }
   return {

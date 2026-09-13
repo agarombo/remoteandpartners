@@ -101,6 +101,9 @@ test("network portraits and keyboard navigation work in both languages", async (
   const s = await setup(t);
   await s.click("#nav .c-orange");
   await s.advance(3000);
+  assert.ok(!s.find("#panel").classList.contains("person"));
+  assert.equal(s.document.querySelectorAll("#panel .net [data-p]").length, 3);
+  await s.click('#panel [data-p="0"]');
   assert.match(s.find("#panel").textContent, /Agustín/);
   assert.match(s.find(".portrait").src, /assets\/agu-/);
   await s.key("ArrowRight");
@@ -376,12 +379,18 @@ test("outward camera travel never hides or reveals individual islands mid-frame"
   }
 });
 
-test('an open drawing refits when crossing the mobile/desktop breakpoint', async t => {
-  const s=await setup(t,{width:390,reduced:true});
-  await s.click('#nav .c-purple');await s.click('#panel [data-lab="autocad"]');await s.advance(2500);
-  const mobile=s.find('#world').getAttribute('transform');
-  s.window.innerWidth=1440;s.window.dispatchEvent(new s.window.Event('resize'));await s.advance(1000);
-  assert.match(s.find('#world').getAttribute('transform'),/scale\(3\.3000\)/);
-  s.window.innerWidth=390;s.window.dispatchEvent(new s.window.Event('resize'));await s.advance(1000);
-  assert.equal(s.find('#world').getAttribute('transform'),mobile);
+test("an open drawing refits when crossing the mobile/desktop breakpoint", async (t) => {
+  const s = await setup(t, { width: 390, reduced: true });
+  await s.click("#nav .c-purple");
+  await s.click('#panel [data-lab="autocad"]');
+  await s.advance(2500);
+  const mobile = s.find("#world").getAttribute("transform");
+  s.window.innerWidth = 1440;
+  s.window.dispatchEvent(new s.window.Event("resize"));
+  await s.advance(1000);
+  assert.match(s.find("#world").getAttribute("transform"), /scale\(3\.3000\)/);
+  s.window.innerWidth = 390;
+  s.window.dispatchEvent(new s.window.Event("resize"));
+  await s.advance(1000);
+  assert.equal(s.find("#world").getAttribute("transform"), mobile);
 });

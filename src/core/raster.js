@@ -46,18 +46,22 @@ async function embeddedFonts() {
       const source = rule.style.getPropertyValue("src");
       const match = source.match(/url\(["']?([^"')]+)["']?\)/);
       if (!match || !/(metropolis-|mono-.*-latin)/.test(match[1])) continue;
-      faces.push((async () => {
-        const response = await window.fetch(new window.URL(match[1], sheet.href || location.href));
-        if (!response.ok) throw new Error("Font unavailable");
-        const blob = await response.blob();
-        const data = await new Promise((resolve, reject) => {
-          const reader = new window.FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-        return rule.cssText.replace(match[0], `url("${data}")`);
-      })());
+      faces.push(
+        (async () => {
+          const response = await window.fetch(
+            new window.URL(match[1], sheet.href || location.href),
+          );
+          if (!response.ok) throw new Error("Font unavailable");
+          const blob = await response.blob();
+          const data = await new Promise((resolve, reject) => {
+            const reader = new window.FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          return rule.cssText.replace(match[0], `url("${data}")`);
+        })(),
+      );
     }
   }
   return (await Promise.all(faces)).join("");
@@ -68,7 +72,8 @@ export function createRaster(stage, layer, request) {
     active = false,
     imageBase,
     lastMatrix,
-    imageViewport;
+    imageViewport,
+    imageRegion;
   let revision = 0,
     savedRevision = -1;
   const fonts = embeddedFonts().catch(() => "");
@@ -98,7 +103,7 @@ export function createRaster(stage, layer, request) {
     const y =
       viewport.factor * (matrix.y - scale * imageBase.y) -
       (1 - scale) * viewport.top * viewport.factor;
-    surface.style.transform = `translate3d(${x}px,${y}px,0) scale(${scale})`;
+    surface.style.transform = `translate3d(${x + scale * imageRegion.x}px,${y + scale * imageRegion.y}px,0) scale(${scale / imageRegion.ratio})`;
     surface.style.opacity = layer.style.opacity || "1";
   }
   function rest() {
@@ -173,7 +178,8 @@ export function createRaster(stage, layer, request) {
       }
       const computed = window.getComputedStyle(nodes[i]);
       const culled = nodes[i].closest('.isl[data-offscreen="true"]');
-      const fixedStroke = computed.getPropertyValue("vector-effect") === "non-scaling-stroke";
+      const fixedStroke =
+        computed.getPropertyValue("vector-effect") === "non-scaling-stroke";
       const css = properties
         .map((name) => {
           let value = (
@@ -181,8 +187,15 @@ export function createRaster(stage, layer, request) {
               ? "visible"
               : computed.getPropertyValue(name)
           ).replace(/url\(["']?[^)#]*#([^"')]+)["']?\)/g, "url(#$1)");
-          if (fixedStroke && ["stroke-width", "stroke-dasharray", "stroke-dashoffset"].includes(name))
-            value = value.replace(/-?\d*\.?\d+(?:px)?/g, (number) => String(parseFloat(number) * ratio));
+          if (
+            fixedStroke &&
+            ["stroke-width", "stroke-dasharray", "stroke-dashoffset"].includes(
+              name,
+            )
+          )
+            value = value.replace(/-?\d*\.?\d+(?:px)?/g, (number) =>
+              String(parseFloat(number) * ratio),
+            );
           return value ? `${name}:${value}` : "";
         })
         .filter(Boolean)
@@ -192,9 +205,8 @@ export function createRaster(stage, layer, request) {
       copies[i].setAttribute("class", styles.get(css));
     }
     const sheet = document.createElementNS(NS, "style");
-    sheet.textContent = fontCSS + [...styles]
-      .map(([css, name]) => `.${name}{${css}}`)
-      .join("");
+    sheet.textContent =
+      fontCSS + [...styles].map(([css, name]) => `.${name}{${css}}`).join("");
     copy.prepend(sheet);
     // The haze filter is defined in the separate static background SVG.
     copy
@@ -229,13 +241,16 @@ export function createRaster(stage, layer, request) {
       next.getContext("2d").drawImage(image, 0, 0, next.width, next.height);
       next.className = "camera-raster";
       next.setAttribute("aria-hidden", "true");
-      next.style.cssText = `left:${x0}px;top:${y0}px;width:${widthPx}px;height:${heightPx}px`;
+      next.style.cssText = "left:0;top:0;width:100%;height:100%";
       canvas?.remove();
       if (canvas) canvas.width = canvas.height = 0;
       canvas = next;
       imageBase = base;
       imageViewport = viewport;
+      imageRegion = { x: x0, y: y0, ratio };
       savedRevision = version;
+      surface.style.width = next.width + "px";
+      surface.style.height = next.height + "px";
       surface.replaceChildren(canvas);
       // Preserve district clicks during travel without repainting the SVG.
       for (const island of stage.querySelectorAll('.isl[role="button"]')) {
@@ -243,7 +258,7 @@ export function createRaster(stage, layer, request) {
         const hit = document.createElement("span");
         hit.dataset.island = island.dataset.island;
         hit.className = "raster-hit";
-        hit.style.cssText = `left:${bounds.x - origin.x}px;top:${bounds.y - origin.y}px;width:${bounds.width}px;height:${bounds.height}px`;
+        hit.style.cssText = `left:${(bounds.x - origin.x - x0) * ratio}px;top:${(bounds.y - origin.y - y0) * ratio}px;width:${bounds.width * ratio}px;height:${bounds.height * ratio}px`;
         surface.append(hit);
       }
       if (display) {

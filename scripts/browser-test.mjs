@@ -6,6 +6,9 @@ import { chromium, webkit } from "playwright";
 
 // Run against the built static site. Screenshots/reports are local QA output.
 const engine = process.argv.includes("--webkit") ? "webkit" : "chrome";
+const executableIndex = process.argv.indexOf("--executable-path");
+const executablePath =
+  executableIndex < 0 ? undefined : process.argv[executableIndex + 1];
 const output = resolve("browser-results", engine);
 await mkdir(output, { recursive: true });
 const root = resolve("dist");
@@ -47,7 +50,7 @@ try {
   browser = await (engine === "webkit" ? webkit : chromium).launch(
     engine === "chrome"
       ? { channel: "chrome", headless: true }
-      : { headless: true },
+      : { headless: true, executablePath },
   );
   for (const [name, width, height] of [
     ["desktop", 1440, 900],
@@ -115,9 +118,12 @@ try {
         "Mobile drawing fits above its controls",
       );
     }
-    await page.setViewportSize({width:name==="mobile"?1440:390,height:name==="mobile"?900:844});
+    await page.setViewportSize({
+      width: name === "mobile" ? 1440 : 390,
+      height: name === "mobile" ? 900 : 844,
+    });
     await page.waitForTimeout(150);
-    await page.setViewportSize({width,height});
+    await page.setViewportSize({ width, height });
     await page.waitForTimeout(150);
     await page.locator("#labDet").click();
     await page.locator("#detail.on #detClose").waitFor();
@@ -143,6 +149,14 @@ try {
     await page.keyboard.press("Escape");
     await page.keyboard.press("Escape");
     await page.locator("#nav .c-orange").click();
+    await page.locator('#panel:not(.person) .net [data-p="0"]').waitFor();
+    await page.waitForTimeout(1500);
+    assert.equal(
+      await page.locator("#panel.person").count(),
+      0,
+      "The network overview stays open until a person is selected",
+    );
+    await page.locator('#panel .net [data-p="0"]').click();
     await page.locator("#panel.person .portrait").waitFor();
     await page.keyboard.press("ArrowRight");
     assert.match(await page.locator("#panel").textContent(), /Tomás/);
@@ -192,7 +206,12 @@ try {
     // Exercise the reported outward transition with motion enabled.
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.locator("#nav .c-purple").click();
-    await page.waitForTimeout(2600);
+    await page.waitForFunction(
+      () =>
+        document.body.dataset.view === "services" &&
+        document.documentElement.classList.contains("still") &&
+        !document.getElementById("cameraLayer").dataset.raster,
+    );
     const cameraFrames = await page.evaluate(
       () =>
         new Promise((resolve) => {
@@ -203,7 +222,15 @@ try {
             frames.push({
               ms: now - start,
               svg: document.getElementById("world").getAttribute("transform"),
-              css: document.getElementById("cameraLayer").style.transform,
+              css: (
+                document.querySelector(".raster-layer") ||
+                document.getElementById("cameraLayer")
+              ).style.transform,
+              cached: !!document.querySelector(".camera-raster"),
+              pixels: [...document.querySelectorAll(".camera-raster")].reduce(
+                (sum, canvas) => sum + canvas.width * canvas.height,
+                0,
+              ),
               hidden: [...document.querySelectorAll(".isl")].filter(
                 (node) => node.style.visibility === "hidden",
               ).length,
@@ -228,6 +255,39 @@ try {
         (frame) => frame.hidden === 0 && frame.css.startsWith("translate3d"),
       ),
     );
+    if (engine === "webkit") {
+      assert.ok(
+        traveling.every(
+          (frame) => frame.cached && frame.pixels <= 4 * 1024 * 1024 + 4096,
+        ),
+        "WebKit moves a bounded bitmap throughout outward travel",
+      );
+      await page.waitForFunction(
+        () =>
+          document.documentElement.classList.contains("still") &&
+          !document.querySelector(".raster-layer") &&
+          document.getElementById("stage").style.opacity !== "0",
+      );
+      // Cancel an in-flight cache/zoom with a second destination, then resize it.
+      await page.locator("#nav .c-purple").click();
+      await page.keyboard.press("Escape");
+      await page.locator("#nav .c-orange").click();
+      await page.waitForFunction(
+        () =>
+          document.body.dataset.view === "network" &&
+          document.documentElement.classList.contains("still"),
+      );
+      await page.setViewportSize({
+        width: name === "mobile" ? 1440 : 390,
+        height: name === "mobile" ? 900 : 844,
+      });
+      await page.waitForFunction(
+        () =>
+          document.documentElement.classList.contains("still") &&
+          !document.querySelector(".raster-layer"),
+      );
+      await page.setViewportSize({ width, height });
+    }
     await page.emulateMedia({ reducedMotion: "reduce" });
     // Responsive reflow and keyboard access at narrow/wide sizes.
     for (const viewport of [

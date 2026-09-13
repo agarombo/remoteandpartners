@@ -2,12 +2,10 @@ import { DISTRICTS, dx } from "../content.js";
 import { NB, nbVoidLv } from "../geometry/building.js";
 import { P } from "../geometry/primitives.js";
 import { byId, show, toggle } from "../core/dom.js";
-import { createTasks } from "../core/tasks.js";
 import { personHTML, districtHTML } from "./network-view.js";
 
 export function createFeature(app) {
-  const panel = byId("panel"),
-    tasks = createTasks();
+  const panel = byId("panel");
   let isle,
     person = null;
   const seats = () => isle.g.querySelectorAll(".seat, .seat-tag");
@@ -43,7 +41,6 @@ export function createFeature(app) {
     const count = isle.people.length;
     person = ((index % count) + count) % count;
     app.state.person = person;
-    tasks.reset();
     toggle(isle.g, "mode-seat", true);
     for (const node of seats()) toggle(node, "on", +node.dataset.i === person);
     app.sound.pick(person);
@@ -61,10 +58,8 @@ export function createFeature(app) {
       app.camera.go(app.camera.island(isle), 1250);
       app.sound.land(isle.i);
       render();
-      if (view === "network") {
-        if (Number.isInteger(requestedPerson)) select(requestedPerson);
-        else tasks.after(1300, () => select(0));
-      }
+      if (view === "network" && Number.isInteger(requestedPerson))
+        select(requestedPerson);
     },
     render,
     resize() {
@@ -93,7 +88,6 @@ export function createFeature(app) {
       if (person !== null) select(person + direction);
     },
     close() {
-      tasks.reset();
       if (isle) {
         isle.g.classList.remove("mode-seat");
         for (const node of seats()) node.classList.remove("on");

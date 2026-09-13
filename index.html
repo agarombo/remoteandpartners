@@ -21,13 +21,20 @@
 
 
 <div class="app">
-  <svg id="stage" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-label="Mapa de la ciudad flotante">
+  <svg class="scene-background" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
     <defs>
       <filter id="blur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="26"/></filter>
-      <!-- luz de estudio: fondo de papel con el centro apenas más claro -->
       <radialGradient id="studio" cx="50%" cy="44%" r="72%">
         <stop offset="0" stop-color="var(--sky-hi,var(--sky-0))"/><stop offset="1" stop-color="var(--sky-lo,var(--sky-0))"/>
       </radialGradient>
+    </defs>
+    <rect width="1600" height="1000" fill="url(#studio)"/>
+    <g id="stars"></g>
+  </svg>
+  <div id="cameraLayer">
+  <svg id="stage" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-label="Mapa de la ciudad flotante">
+    <defs>
+      <!-- luz de estudio: fondo de papel con el centro apenas más claro -->
       <!-- sombra arrojada: un desenfoque corto, como el de una lámpara grande y cercana -->
       <filter id="shd" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="1.6"/></filter>
       <!-- acrílico esmerilado: reflejo del cielo arriba, tono del interior abajo -->
@@ -38,13 +45,6 @@
         <stop offset="0" stop-color="var(--stone-1)" stop-opacity=".75"/><stop offset=".55" stop-color="var(--stone-1)" stop-opacity=".28"/><stop offset="1" stop-color="var(--ink)" stop-opacity=".18"/>
       </linearGradient>
       <!-- óptica: viñeta de objetivo y grano de película -->
-      <radialGradient id="vig" cx="50%" cy="50%" r="72%">
-        <stop offset=".58" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/>
-      </radialGradient>
-      <filter id="grain" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
-        <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch" seed="7"/>
-        <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .33 .33 .33 0 -.02"/>
-      </filter>
       <!-- listones de la fachada: hilos verticales, que en isométrica siguen siendo verticales -->
       <pattern id="slat" width="2.6" height="8" patternUnits="userSpaceOnUse">
         <rect width=".55" height="8" fill="var(--ink)" opacity=".07"/>
@@ -54,8 +54,6 @@
         <stop offset="0" stop-color="var(--logo-a)"/><stop offset="1" stop-color="var(--logo-b)"/>
       </linearGradient>
     </defs>
-    <rect width="1600" height="1000" fill="url(#studio)"/>
-    <g id="stars"></g>
     <g id="world">
       <g id="clouds"></g>
       <g id="orbit"></g>
@@ -68,8 +66,20 @@
       <g id="usmap"></g>
       <g id="typo"></g>
     </g>
-    <g id="tags"></g>
-    <!-- post-proceso de cámara: viñeta suave y grano fino, fijos a la pantalla -->
+  </svg>
+  </div>
+  <svg class="scene-labels" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g id="tags"></g></svg>
+
+  <svg class="scene-optics" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <radialGradient id="vig" cx="50%" cy="50%" r="72%">
+        <stop offset=".58" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/>
+      </radialGradient>
+      <filter id="grain" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch" seed="7"/>
+        <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .33 .33 .33 0 -.02"/>
+      </filter>
+    </defs>
     <rect class="post" width="1600" height="1000" fill="url(#vig)"/>
     <rect class="post grain" width="1600" height="1000" filter="url(#grain)"/>
   </svg>

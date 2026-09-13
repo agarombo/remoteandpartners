@@ -1,91 +1,100 @@
-# Performance refactor
+# Performance rebuild
 
-The site now uses Vite with native JavaScript modules. Its interactive SVG city,
-content, five appearance options, language and sound controls, contact flow,
-drawings, BIM viewer, territory, capture URLs, and static DXF downloads remain.
-The FTP host still serves static files; Node is needed only for development/CI.
+The site retains Vite and native JavaScript. This rebuild replaces the application
+controller with independent features, explicit navigation state, cancellable
+transitions and a shared camera/renderer. It preserves the existing content,
+geometry, five appearances, languages, sound controls, contact flow, drawings,
+BIM viewer, territory, capture URLs and static DXF downloads.
 
-## Changes
+## Architecture and cleanup
 
-- Split the original inline document into HTML, CSS, content, geometry,
-  interactions, and animation scheduling. Vite minifies production output and
-  gives assets content hashes so they can be cached independently.
-- Extracted all three portraits without recompression. They are requested when
-  their panels appear, rather than downloaded inside the initial script.
-- Converted the existing Metropolis fonts to WOFF2 and hosted the same IBM Plex
-  Mono web subsets locally. Text still uses `font-display: swap`; the external
-  Google Fonts stylesheet is no longer required.
-- Build the BIM model, territory, and typology DOM only when opened. Reuse the
-  same nodes on subsequent visits. Cache the eight combinations of four drawing
-  sheets and two languages rather than reconstructing them each time.
-- Use one animation scheduler with elapsed-time motion. Slow decorative drift
-  updates at most 30 times per second in the overview. Camera transitions retain
-  display-rate updates; the city holds steady during travel and while reading.
-  Unchanged transforms and hidden labels no longer cause repeated SVG writes.
-- Stop the JavaScript loop when a view settles, when the document is hidden,
-  and when reduced motion is enabled. Pause hidden CSS animations and honor
-  changes to the reduced-motion preference without reloading.
-- Delegate scene interactions once, including newly created drawing details,
-  instead of attaching more detail handlers on each BIM redraw.
-- Removed the unreachable DXF exporter and its conversion helpers, unused
-  totals, unused drawing helpers/arguments/translations, the obsolete `pl-*`
-  stylesheet, unused ring/line styles, and the superseded `data-theme` rules.
-  Existing public DXF files retain their original bytes and URLs.
-- Generate `ciudad.html` from the Vite source, preserving the standalone Artifact
-  workflow without maintaining a second hand-edited application.
+- Only the city is loaded initially. Network, origin, contact, territory, drawing
+  viewers, details and capture helpers load on demand through native imports.
+  The lab's geometry is no longer pulled into the city entry through a shared
+  projection helper.
+- Features own their pending work. Leaving a view cancels its timers; a later
+  navigation supersedes an earlier module load or queued territory destination.
+- Camera updates use elapsed time and one animation scheduler. Cached bounds
+  avoid layout reads on each frame. Decorative motion is limited to the overview;
+  JavaScript sleeps in settled viewers, reduced-motion mode and hidden documents.
+- The renderer skips unchanged state. Off-screen scenery is culled only when the
+  camera is settled, keeping paint layers stable throughout inward/outward travel.
+- Background haze and full-screen optical effects have separate SVG layers.
+  Changing camera state no longer repeatedly switches blur on dimmed islands.
+  Decorative CSS walkers/beacons pause in reading views and off-screen islands.
+  Closed panels become invisible after their exit transition. Live backdrop blur
+  was replaced with a matching, more opaque surface so sliding panels do not
+  repeatedly resample the moving SVG underneath.
+- Drawing and BIM nodes are cached. Selecting another sheet keeps the camera
+  still; clicking the selected Foundation sheet does nothing. Mobile fitting
+  measures the destination projection, avoiding competing camera corrections
+  during the plan animation. Manual projection changes cancel the automatic flip.
+- Draft contact fields survive language changes and reopening. Service chips
+  update the email immediately. The flow still opens the visitor's email client;
+  it does not submit mail to a backend.
+- Removed the superseded monolithic controller/geometry module, obsolete motion
+  and delegation helpers, unreachable About/Work placeholder content and CTA
+  branches, and unused imports/styles. The vector recipes remain in focused
+  modules because they provide the site's actual drawings and appearance.
+- `ciudad.html` is generated from the same source, with lazy features inlined for
+  the standalone Artifact variant. The deployed build keeps separate cacheable
+  assets. No runtime dependency was added; Playwright is a development dependency.
 
 ## Measurements
 
-Compared against repository revision `9d62a67`, using the same deterministic
-JSDOM harness and simulated 60 Hz clock on both versions. These are source,
-payload, DOM, and mutation measurements, **not browser FPS or Core Web Vitals**.
-Sizes are decimal KB before HTTP compression.
+Baseline: local commit `32e86c7` (the first Vite refactor). Three sequential runs
+per version and viewport, local static servers, cold browser contexts, Chrome
+153.0.8010.37 on macOS ARM64, 4× CPU throttling, DPR 1. Desktop: 1440×900;
+mobile emulation: 390×844 with touch. Figures below are medians. Raw measurements
+are in `docs/performance-results.json`; rerun with `scripts/browser-profile.mjs`.
 
-| Measurement | Before | After |
+| Measurement | Baseline | Rebuild |
 | --- | ---: | ---: |
-| HTML document | 774.8 KB | 11.1 KB |
-| HTML + JS + CSS + favicon + every local font subset | At least 774.8 KB¹ | 287.6 KB² |
-| Initial DOM elements | 7,890 | 7,186 |
-| SVG/DOM `setAttribute` calls in one second of overview drift | 1,920 | 781 |
-| `setAttribute` calls in one second of settled services view | 1,952 | 0 |
-| `setAttribute` calls in one second of reduced-motion overview | 1,920 | 0 |
+| Initial JavaScript, before HTTP compression | 100.6 KB | 53.1 KB |
+| Desktop main-thread time during 2 seconds in Services | 1.890 s | 0.149 s |
+| Mobile main-thread time during 2 seconds in Services | 1.685 s | 0.139 s |
+| Desktop main-thread time during 3 seconds in overview | 2.656 s | 2.770 s |
+| Mobile main-thread time during 3 seconds in overview | 2.605 s | 2.572 s |
+| Desktop overview frame interval, 95th percentile | 33.4 ms | 16.8 ms |
+| Mobile overview frame interval, 95th percentile | 16.8 ms | 16.8 ms |
+| Desktop navigation to available menu | 873 ms | 859 ms |
+| Mobile navigation to available menu | 882 ms | 1,040 ms |
 
-¹ The original document already included every portrait; its external IBM Plex
-font requests are additional and are not included in this lower bound.
+Initial JavaScript is approximately 47% smaller. Services uses approximately 92%
+less main-thread time in these samples, principally because decorative SVG
+animations stop while reading. Overview CPU cost and initial readiness did not
+show a consistent improvement; the detailed SVG still has a substantial rendering
+cost. Frame timings and these local readiness measurements are not Core Web
+Vitals or measurements from physical phones/production hosting. They vary with
+other machine activity, device/GPU, network and server caching/compression.
 
-² A conservative total including all language subsets, even those the browser
-will not request for English/Spanish. Portraits total 312.1 KB and are additional
-when a portrait-containing view opens. This is not a captured network waterfall.
-
-The overview comparison represents roughly 59% fewer attribute writes. It does
-not imply 59% faster rendering: SVG rasterization, filters, device/GPU speed,
-network conditions, and hosting compression still affect real-world results.
+The measurement build precedes the final travel-only culling correction. That
+correction keeps all islands available while the camera moves. The final build
+also replaces panel backdrop blur with flat surfaces. The table is retained as
+the measured intermediate build, rather than assigning unmeasured numbers to
+those last changes.
 
 ## Verification
 
-`npm run check` passes ESLint, the Vite production build, and 20 integration tests
-against the compiled site. Coverage includes four drawing sheets, plan flipping,
-section/automation details, BIM discipline toggles, keyboard navigation, both
-languages, the network portraits, the contact email, all origin chapters,
-territory/typology revisits, reduced motion, visibility changes, resize behavior,
-60/120 Hz motion, the standalone Artifact, and all seven capture modes.
+- `npm run check`: lint, production build and 26 compiled-site integration tests.
+  Covers all features, seven capture modes, 60/120 Hz motion, hidden/reduced
+  motion, rapid navigation, delayed callback cancellation, contact draft/chips,
+  drawing callouts, stable sheet selection and outward-transition visibility.
+- `npm run test:browser`: actual Chrome tests at desktop and mobile sizes, all
+  appearances, drawing sheets/details, BIM toggles, network, both languages,
+  origin, territory/typology, contact composition, failed lazy download recovery
+  after refresh, and document overflow checks at 320, 768 and 1920 pixels.
+  Mobile drawing bounds are checked against the available space above controls.
+  Language changes inside a covered sidebar are exercised through keyboard focus.
+- 33 comparisons against the baseline confirmed unchanged city geometry, all
+  four sheets and annotations, BIM, territory and typology (normalizing generated
+  clip IDs and projection styles). Existing DXF files remain byte-for-byte equal.
+- Normal-motion frames were captured in Chrome at DPR 2, and the reported local
+  Chrome preview was inspected directly during the Services-to-city transition.
+- WebKit installation was attempted but the browser download endpoints timed
+  out, including the network-enabled retry. Safari/WebKit and physical devices
+  therefore remain unverified. Audible output and live FTP hosting were not
+  validated by the automated suite.
 
-A separate comparison against the original page confirmed identical generated
-city geometry, all four sheets and their annotations, BIM geometry, territory,
-and typology markup (accounting for deferred/cached containers). DXF downloads
-are also checked byte-for-byte against `public/DXF/`.
-
-The DOM harness stubs SVG layout measurements and does not render pixels or
-play audio. Mobile layout, visual appearance, audible output, browser frame
-times, and production hosting behavior still need real-browser verification.
-No deployment or live-server configuration was changed during this refactor.
-
-For the next measurement pass, profile a production preview on desktop and a
-midrange phone: first load, overview, service zoom, and map transitions. Inspect
-paint cost from SVG filters before considering a larger renderer rewrite. Check
-hosting compression/cache headers alongside that browser measurement.
-
-References: [Vite assets](https://vite.dev/guide/assets.html),
-[Vite static deployment](https://vite.dev/guide/static-deploy.html),
-[animation timestamps](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame),
-[font delivery](https://web.dev/articles/font-best-practices).
+No files were pushed or deployed. The existing FTP workflow still builds and
+uploads `dist/` only after an explicitly authorized push to `main`.

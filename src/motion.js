@@ -1,12 +1,9 @@
-// Avoid invalidating an SVG subtree when its rounded transform hasn't changed.
-export function setAttributeIfChanged(element, name, value) {
-  if (element.getAttribute(name) !== value) element.setAttribute(name, value);
-}
-
 // Same easing at 60 Hz, 120 Hz, or after a missed frame.
 export function approach(current, target, elapsed) {
   if (Math.abs(target - current) < 0.01) return target;
-  return current + (target - current) * (1 - Math.pow(0.93, elapsed / (1000 / 60)));
+  return (
+    current + (target - current) * (1 - Math.pow(0.93, elapsed / (1000 / 60)))
+  );
 }
 
 // Own exactly one animation request. Inactive views and hidden documents sleep.
@@ -20,7 +17,8 @@ export function createFrameLoop(render, host = window) {
   };
   function tick(now) {
     pending = null;
-    const elapsed = previous === null ? 1000 / 60 : Math.min(100, now - previous);
+    const elapsed =
+      previous === null ? 1000 / 60 : Math.min(100, now - previous);
     previous = now;
     if (render(now, elapsed)) request();
     else previous = null;
@@ -29,17 +27,20 @@ export function createFrameLoop(render, host = window) {
     if (pending !== null) host.cancelAnimationFrame(pending);
     pending = null;
     previous = null;
-    host.document.documentElement.classList.toggle('app-hidden', host.document.hidden);
+    host.document.documentElement.classList.toggle(
+      "app-hidden",
+      host.document.hidden,
+    );
     request();
   }
-  host.document.addEventListener('visibilitychange', visibility);
+  host.document.addEventListener("visibilitychange", visibility);
   return {
     request,
     stop() {
       stopped = true;
       if (pending !== null) host.cancelAnimationFrame(pending);
       pending = null;
-      host.document.removeEventListener('visibilitychange', visibility);
+      host.document.removeEventListener("visibilitychange", visibility);
     },
   };
 }

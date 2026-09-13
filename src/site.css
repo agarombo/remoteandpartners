@@ -243,10 +243,15 @@ body{
   -webkit-font-smoothing:antialiased;
   overflow:hidden;
 }
-.app{ position:fixed; inset:0; }
+.app{ position:fixed; inset:0; isolation:isolate; overflow:hidden; }
 
 /* ---------- escena ---------- */
 #stage{ position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:manipulation; }
+.scene-background, .scene-optics, .scene-labels{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+/* Cache full-screen filters independently from the moving geometry. */
+.scene-background, .scene-optics{ transform:translateZ(0); }
+#cameraLayer{ position:absolute; inset:0; transform-origin:0 0; will-change:transform; }
+#stage{ overflow:visible; }
 /* todo el trazo de la escena va a grosor constante: si se escalara con la
    cámara desaparecería al alejarse y engordaría al aterrizar */
 #islands polygon, #islands line, #islands path, #islands polyline,
@@ -333,7 +338,6 @@ nav.dist button.c-magenta i{ color:var(--magenta-3); }
 nav.dist button.c-purple i{ color:var(--purple-3); }
 nav.dist button.c-blue i{ color:var(--blue-3); }
 nav.dist button.c-orange i{ color:var(--orange-3); }
-nav.dist button.c-coral i{ color:var(--coral-3); }
 
 /* ---------- nodo de conexión, arriba al centro ----------
    no es un botón: es un nodo disponible que late cada tanto */
@@ -571,7 +575,7 @@ body.originmode.wiremode #links .link.built{
 
 /* ---------- barra de obra: la ciudad sigue detrás ---------- */
 .lab{ position:absolute; left:0; right:0; bottom:0; z-index:40;
-      background:var(--panel); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+      background:color-mix(in srgb,var(--panel) 30%,var(--sky-0));
       border-top:1px solid var(--panel-line);
       display:flex; align-items:flex-end; gap:clamp(18px,2.6vw,40px);
       padding:clamp(16px,2vw,24px) clamp(18px,3vw,34px); flex-wrap:wrap;
@@ -669,11 +673,12 @@ body.originmode.wiremode #links .link.built{
 .proj-bim.xray .lay-arc{ opacity:.3; }
 
 
+/* Flat panel surfaces avoid resampling the moving SVG through backdrop blur. */
 /* ---------- panel de distrito ---------- */
 .panel{
   position:absolute; top:0; right:0; height:100%; width:min(410px,38vw);
   padding:clamp(24px,4vh,54px) clamp(24px,2.6vw,44px);
-  background:var(--panel); backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+  background:color-mix(in srgb,var(--panel) 30%,var(--sky-0));
   border-left:1px solid var(--panel-line);
   display:flex; flex-direction:column; gap:22px; overflow-y:auto;
   transform:translateX(102%); transition:transform .8s cubic-bezier(.22,.9,.24,1);
@@ -858,7 +863,7 @@ body.originmode.wiremode #links .link.built{
    Un detalle constructivo no es una planta: se presenta como lo que es,
    una lámina con su referencia, su escala y su estado. */
 #detail{ position:absolute; inset:auto 0 0 0; margin:0 auto; width:min(560px,92vw);
-         max-height:88%; overflow-y:auto; background:var(--panel); backdrop-filter:blur(14px);
+         max-height:88%; overflow-y:auto; background:color-mix(in srgb,var(--panel) 30%,var(--sky-0));
          border:1px solid var(--panel-line); border-radius:4px; padding:20px 20px 22px;
          display:flex; flex-direction:column; gap:14px; pointer-events:auto;
          transform:translateY(112%); transition:transform .6s cubic-bezier(.32,.78,.28,1);
@@ -909,13 +914,12 @@ body.originmode.wiremode #links .link.built{
 .grain{ opacity:.045; mix-blend-mode:multiply; }
 :root[data-look="dark"] .grain, :root[data-look="bw"] .grain{ mix-blend-mode:screen; opacity:.045; }
 /* profundidad de campo: sólo con la cámara quieta, y sólo fuera del plano de foco */
-.still .isl.dof:not(.focus){ filter:blur(.9px); }
-.still .isl.dimmed{ filter:blur(1.4px); }
+.still body[data-view="city"] .isl.dof:not(.focus){ filter:blur(.9px); }
 /* en el móvil el desenfoque de catorce islas cuesta caro: la sombra va nítida y
    más suave, y la óptica se apaga */
 @media (max-width:820px){
   .shd{ filter:none; opacity:calc(var(--shd-op,.14)*.7); }
-  .still .isl.dof:not(.focus), .still .isl.dimmed{ filter:none; }
+  .still body[data-view="city"] .isl.dof:not(.focus){ filter:none; }
   .grain{ display:none; }
 }
 /* ---------- modo captura ----------
@@ -933,4 +937,27 @@ html.shot #shock.frozen .shockring{ animation-play-state:paused; }
 /* Hidden documents should not keep decorative CSS animations running. */
 html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after{
   animation-play-state:paused !important;
+}
+
+/* Invisible scenery and reading views do not need decorative SVG animation. */
+.isl[data-offscreen="true"] *,
+html:not(.still) .walk,
+html:not(.still) .beacon,
+html:not(.still) .padlight,
+body:not([data-view="city"]) .walk,
+body:not([data-view="city"]) .beacon,
+body:not([data-view="city"]) .padlight{
+  animation-play-state:paused !important;
+}
+
+/* Closed overlays stop painting after their exit and never leave a sliver. */
+.panel, .lab, .d-doc{
+  visibility:hidden;
+  transition-property:transform, visibility;
+  transition-duration:.8s, 0s;
+  transition-delay:0s, .8s;
+}
+.panel.open, .lab.on, .d-doc.on{
+  visibility:visible;
+  transition-delay:0s, 0s;
 }

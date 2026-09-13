@@ -1,0 +1,312 @@
+{
+  "browser": "153.0.8010.37",
+  "platform": "darwin 27.0.0 arm64",
+  "cpuThrottle": 4,
+  "deviceScaleFactor": 1,
+  "urls": [
+    "http://127.0.0.1:4180/",
+    "http://127.0.0.1:4181/"
+  ],
+  "results": [
+    {
+      "trial": 0,
+      "viewport": "desktop",
+      "version": "baseline",
+      "readyMs": 788.9391660000001,
+      "resources": [
+        {
+          "file": "index-CtCGhdPX.js",
+          "bytes": 100602
+        }
+      ],
+      "overview": {
+        "taskSeconds": 2.58213,
+        "layoutSeconds": 0.136602,
+        "frameP95": 33.30000000000018,
+        "framesOver50ms": 0
+      },
+      "reading": {
+        "taskSeconds": 1.7448010000000007,
+        "layoutSeconds": 0.08302900000000002,
+        "frameP95": 16.799999999999272,
+        "framesOver50ms": 0
+      },
+      "errors": []
+    },
+    {
+      "trial": 0,
+      "viewport": "desktop",
+      "version": "candidate",
+      "readyMs": 791.4528750000009,
+      "resources": [
+        {
+          "file": "index-BnsGki-w.js",
+          "bytes": 53049
+        }
+      ],
+      "overview": {
+        "taskSeconds": 2.750307,
+        "layoutSeconds": 0.15064299999999997,
+        "frameP95": 16.800000000000182,
+        "framesOver50ms": 0
+      },
+      "reading": {
+        "taskSeconds": 0.12496100000000077,
+        "layoutSeconds": 0,
+        "frameP95": 16.700000000000728,
+        "framesOver50ms": 0
+      },
+      "errors": []
+    },
+    {
+      "trial": 0,
+      "viewport": "mobile",
+      "version": "baseline",
+      "readyMs": 806.0193749999999,
+      "resources": [
+        {
+          "file": "index-CtCGhdPX.js",
+          "bytes": 100602
+        }
+      ],
+      "overview": {
+        "taskSeconds": 2.604617,
+        "layoutSeconds": 0.16028199999999992,
+        "frameP95": 16.800000000000182,
+        "framesOver50ms": 0
+      },
+      "reading": {
+        "taskSeconds": 1.6850710000000007,
+        "layoutSeconds": 0.07550400000000002,
+        "frameP95": 16.799999999999272,
+        "framesOver50ms": 0
+      },
+      "errors": []
+    },
+    {
+      "trial": 0,
+      "viewport": "mobile",
+      "version": "candidate",
+      "readyMs": 1109.9211250000008,
+      "resources": [
+        {
+          "file": "index-BnsGki-w.js",
+          "bytes": 53049
+        }
+      ],
+      "overview": {
+        "taskSeconds": 2.504961,
+        "layoutSeconds": 0.154403,
+        "frameP95": 16.800000000000182,
+        "framesOver50ms": 0
+      },
+      "reading": {
+        "taskSeconds": 0.13898800000000033,
+        "layoutSeconds": 0,
+        "frameP95": 16.700000000000728,
+        "framesOver50ms": 0
+      },
+      "errors": []
+    },
+    {
+      "trial": 1,
+      "viewport": "desktop",
+      "version": "baseline",
+      "readyMs": 883.9988749999975,
+      "resources": [
+        {
+          "file": "index-CtCGhdPX.js",
+          "bytes": 100602
+        }
+      ],
+      "overview": {
+        "taskSeconds": 2.6563589999999997,
+        "layoutSeconds": 0.14290900000000006,
+        "frameP95": 33.399999999999636,
+        "framesOver50ms": 0
+      },
+      "reading": {
+        "taskSeconds": 1.8904039999999984,
+        "layoutSeconds": 0.08366699999999994,
+        "frameP95": 16.799999999999272,
+        "framesOver50ms": 0
+      },
+      "errors": []
+    },
+    {
+      "trial": 1,
+      "viewport": "desktop",
+      "version": "candidate",
+      "readyMs": 859.2103749999951,
+      "resources": [
+        {
+          "file": "index-BnsGki-w.js",
+          "bytes": 53049
+        }
+      ],
+      "overview": {
+        "taskSeconds": 2.849417,
+        "layoutSeconds": 0.14407099999999995,
+        "frameP95": 16.799999999999272,
+        "framesOver50ms": 0
+      },
+      "reading": {
+        "taskSeconds": 0.14851499999999973,
+        "layoutSeconds": 0,
+        "frameP95": 16.700000000000728,
+        "framesOver50ms": 0
+      },
+      "errors": []
+    },
+    {
+      "trial": 1,
+      "viewport": "mobile",
+      "version": "baseline",
+      "readyMs": 903.4733750000014,
+      "resources": [
+        {
+          "file": "index-CtCGhdPX.js",
+          "bytes": 100602
+        }
+      ],
+      "overview": {
+        "taskSeconds": 2.5302330000000004,
+        "layoutSeconds": 0.15786099999999992,
+        "frameP95": 33.30000000000018,
+        "framesOver50ms": 0
+      },
+      "reading": {
+        "taskSeconds": 1.771287000000001,
+        "layoutSeconds": 0.0780740000000002,
+        "frameP95": 16.700000000000728,
+        "framesOver50ms": 0
+      },
+      "errors": []
+    },
+    {
+      "trial": 1,
+      "viewport": "mobile",
+      "version": "candidate",
+      "readyMs": 845.9156250000087,
+      "resources": [
+        {
+          "file": "index-BnsGki-w.js",
+          "bytes": 53049
+        }
+      ],
+      "overview": {
+        "taskSeconds": 2.6747710000000002,
+        "layoutSeconds": 0.16475099999999998,
+        "frameP95": 16.799999999999272,
+        "framesOver50ms": 0
+      },
+      "reading": {
+        "taskSeconds": 0.1423009999999998,
+        "layoutSeconds": 0,
+        "frameP95": 16.700000000000728,
+        "framesOver50ms": 0
+      },
+      "errors": []
+    },
+    {
+      "trial": 2,
+      "viewport": "desktop",
+      "version": "baseline",
+      "readyMs": 872.7211249999964,
+      "resources": [
+        {
+          "file": "index-CtCGhdPX.js",
+          "bytes": 100602
+        }
+      ],
+      "overview": {
+        "taskSeconds": 2.744773,
+        "layoutSeconds": 0.15929400000000005,
+        "frameP95": 33.399999999999636,
+        "framesOver50ms": 0
+      },
+      "reading": {
+        "taskSeconds": 1.9906769999999998,
+        "layoutSeconds": 0.08371799999999996,
+        "frameP95": 33.20000000000073,
+        "framesOver50ms": 0
+      },
+      "errors": []
+    },
+    {
+      "trial": 2,
+      "viewport": "desktop",
+      "version": "candidate",
+      "readyMs": 1085.3165000000008,
+      "resources": [
+        {
+          "file": "index-BnsGki-w.js",
+          "bytes": 53049
+        }
+      ],
+      "overview": {
+        "taskSeconds": 2.770288,
+        "layoutSeconds": 0.17056900000000008,
+        "frameP95": 33.30000000000018,
+        "framesOver50ms": 0
+      },
+      "reading": {
+        "taskSeconds": 0.15295599999999965,
+        "layoutSeconds": 0,
+        "frameP95": 16.799999999999272,
+        "framesOver50ms": 0
+      },
+      "errors": []
+    },
+    {
+      "trial": 2,
+      "viewport": "mobile",
+      "version": "baseline",
+      "readyMs": 882.3470000000088,
+      "resources": [
+        {
+          "file": "index-CtCGhdPX.js",
+          "bytes": 100602
+        }
+      ],
+      "overview": {
+        "taskSeconds": 2.6393009999999997,
+        "layoutSeconds": 0.15541400000000005,
+        "frameP95": 16.700000000000728,
+        "framesOver50ms": 0
+      },
+      "reading": {
+        "taskSeconds": 1.5888279999999995,
+        "layoutSeconds": 0.07603400000000016,
+        "frameP95": 16.799999999999272,
+        "framesOver50ms": 0
+      },
+      "errors": []
+    },
+    {
+      "trial": 2,
+      "viewport": "mobile",
+      "version": "candidate",
+      "readyMs": 1040.212542000023,
+      "resources": [
+        {
+          "file": "index-BnsGki-w.js",
+          "bytes": 53049
+        }
+      ],
+      "overview": {
+        "taskSeconds": 2.571949,
+        "layoutSeconds": 0.18169499999999994,
+        "frameP95": 16.800000000000182,
+        "framesOver50ms": 0
+      },
+      "reading": {
+        "taskSeconds": 0.13119200000000042,
+        "layoutSeconds": 0,
+        "frameP95": 16.80000000000109,
+        "framesOver50ms": 0
+      },
+      "errors": []
+    }
+  ]
+}

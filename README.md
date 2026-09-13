@@ -22,14 +22,32 @@ npm run preview
 `check` ejecuta el análisis de código, genera `dist/` y prueba las interacciones
 del sitio compilado en un DOM simulado. Las pruebas comprueban navegación,
 idiomas, controles de sonido, planos, BIM, territorio, contacto, movimiento
-reducido y capturas. No miden FPS ni sustituyen una revisión visual en un navegador.
+reducido, capturas, cambios rápidos de vista y conservación del formulario.
+El harness ejecuta los módulos compilados, incluidos los imports diferidos.
+No mide FPS ni sustituye una revisión visual en un navegador.
+
+Para las pruebas de interacción de escritorio y móvil en Chrome instalado:
+
+```sh
+npm run test:browser
+```
+
+El script sirve `dist/` temporalmente en `127.0.0.1:4182`, prueba los controles
+y guarda capturas/informes locales en `browser-results/` (fuera de Git).
+No envía el formulario ni publica archivos. Admite `--webkit` si se instaló
+esa versión de Playwright con `npx playwright install webkit`.
+Para comparar dos previews estáticos, ejecutar
+`node scripts/browser-profile.mjs URL_BASE URL_NUEVA`; las mediciones son
+secuenciales, con tres repeticiones por viewport y CPU limitada a 4×.
 
 ## Archivos
 
 - `index.html`: documento, metadatos y estructura del sitio.
 - `src/content.js`: textos en español/inglés, equipo, contacto y distritos.
-- `src/geometry.js`: geometría de la ciudad, planos y modelo BIM.
-- `src/app.js`: navegación, cámara y visores.
+- `src/geometry/`: primitivas y geometría compartida; los planos/BIM se cargan al abrirlos.
+- `src/app.js`: arranque, navegación y entrada de teclado/puntero.
+- `src/core/`: cámara, escena, sonido y tareas cancelables.
+- `src/features/`: visores independientes con apertura, actualización y cierre.
 - `src/motion.js`: planificación de fotogramas y actualización de transforms.
 - `src/site.css`: estilos y aspectos existentes.
 - `src/assets/`: retratos, favicon y fuentes. Vite genera nombres con hash.

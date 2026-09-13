@@ -9,6 +9,7 @@ const result = await build({
   publicDir: false,
   build: {
     write: false,
+    rolldownOptions: { output: { codeSplitting: false } },
     lib: { entry: resolve('src/app.js'), name: 'RemoteCity', formats: ['iife'] },
   },
 });

@@ -1,8 +1,8 @@
-name: Build y despliegue por FTP
+name: Despliegue por FTP
 
 # El sitio no tiene nada que compilar: index.html es un único archivo
-# autocontenido (HTML + CSS + JS + fuentes en base64). El job "build" existe
-# igual, y arma en dist/ exactamente lo que debe quedar público: separa el
+# autocontenido (HTML + CSS + JS + fuentes en base64). Por eso hay un solo
+# job, que arma en dist/ exactamente lo que debe quedar público: separa el
 # sitio de los archivos que sólo importan al repositorio (README, .gitignore,
 # este mismo workflow, y ciudad.html, que es la versión recortada para pegar
 # en el visor de Artifacts de Claude, no para publicar).
@@ -15,9 +15,13 @@ on:
   workflow_dispatch: {}   # permite lanzarlo a mano desde la pestaña Actions
 
 jobs:
-  build:
-    name: Build
+  deploy:
+    name: Deploy
     runs-on: ubuntu-latest
+    # FTP_SERVER / FTP_USERNAME / FTP_PASSWORD viven en este entorno, no como
+    # secrets del repositorio: sin declarar el entorno acá, el job no los ve
+    # y la acción de FTP falla con "Input required and not supplied".
+    environment: "CPanel Variables"
     steps:
       - name: Descargar el repositorio
         uses: actions/checkout@v7
@@ -31,28 +35,6 @@ jobs:
           cp -r DXF dist/
           echo "--- contenido de dist/ ---"
           find dist -type f | sort
-
-      - name: Guardar el resultado del build
-        uses: actions/upload-artifact@v7
-        with:
-          name: sitio-estatico
-          path: dist/
-          retention-days: 7
-
-  deploy:
-    name: Deploy
-    needs: build
-    runs-on: ubuntu-latest
-    # FTP_SERVER / FTP_USERNAME / FTP_PASSWORD viven en este entorno, no como
-    # secrets del repositorio: sin declarar el entorno acá, el job no los ve
-    # y la acción de FTP falla con "Input required and not supplied".
-    environment: "CPanel Variables"
-    steps:
-      - name: Recuperar el build
-        uses: actions/download-artifact@v8
-        with:
-          name: sitio-estatico
-          path: dist
 
       - name: Subir por FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0

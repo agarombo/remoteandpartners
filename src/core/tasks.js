@@ -21,8 +21,5 @@ export function createTasks(host = window) {
       for (const id of pending) host.clearTimeout(id);
       pending.clear();
     },
-    get size() {
-      return pending.size;
-    },
   };
 }

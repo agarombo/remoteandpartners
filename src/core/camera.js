@@ -96,16 +96,21 @@ export function createCamera(state, request) {
     // relative HTML transform over the existing scene instead of repainting
     // every vector/filter for each intermediate camera position.
     if (!committed || !moving) {
-      const transform=`translate(${matrix.x.toFixed(2)},${matrix.y.toFixed(2)}) scale(${matrix.k.toFixed(4)})`;
+      const transform = `translate(${matrix.x.toFixed(2)},${matrix.y.toFixed(2)}) scale(${matrix.k.toFixed(4)})`;
       setAttribute(world, "transform", transform);
-      layer.style.transform="none";
-      committed={...matrix};
+      if (layer.style.transform !== "none") layer.style.transform = "none";
+      committed = { ...matrix };
     } else {
-      const scale=matrix.k/committed.k;
-      const offsetX=-viewport.left*viewport.factor, offsetY=-viewport.top*viewport.factor;
-      const x=viewport.factor*(matrix.x-scale*committed.x)+(1-scale)*offsetX;
-      const y=viewport.factor*(matrix.y-scale*committed.y)+(1-scale)*offsetY;
-      layer.style.transform=`translate3d(${x.toFixed(3)}px,${y.toFixed(3)}px,0) scale(${scale.toFixed(6)})`;
+      const scale = matrix.k / committed.k;
+      const offsetX = -viewport.left * viewport.factor,
+        offsetY = -viewport.top * viewport.factor;
+      const x =
+        viewport.factor * (matrix.x - scale * committed.x) +
+        (1 - scale) * offsetX;
+      const y =
+        viewport.factor * (matrix.y - scale * committed.y) +
+        (1 - scale) * offsetY;
+      layer.style.transform = `translate3d(${x.toFixed(3)}px,${y.toFixed(3)}px,0) scale(${scale.toFixed(6)})`;
     }
     toggle(document.documentElement, "still", !moving);
     return matrix;

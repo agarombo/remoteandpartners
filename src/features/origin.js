@@ -101,7 +101,8 @@ export function createFeature(app) {
     },
     render,
     resize() {
-      app.camera.fit("#islands .isl");
+      if (app.camera.mobile()) app.camera.fit("#islands .isl");
+      else app.camera.go(app.camera.home(), 450);
     },
     key(direction) {
       select(step + direction);

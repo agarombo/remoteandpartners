@@ -342,27 +342,36 @@ test("contact draft survives translation and chip changes update the email immed
   assert.equal(s.find("#fName").value, "Draft <&> name");
 });
 
-test('scene callouts open their drawings and selecting a sheet does not restart the camera', async t => {
-  const s=await setup(t);
-  await s.click('#nav .c-purple');
-  await s.key('Enter','.isl.focus [data-lab="autocad"]');
+test("scene callouts open their drawings and selecting a sheet does not restart the camera", async (t) => {
+  const s = await setup(t);
+  await s.click("#nav .c-purple");
+  await s.key("Enter", '.isl.focus [data-lab="autocad"]');
   await s.advance(4000);
-  assert.equal(s.document.body.dataset.view,'lab');
-  const before=s.find('#world').getAttribute('transform');
+  assert.equal(s.document.body.dataset.view, "lab");
+  const before = s.find("#world").getAttribute("transform");
   await s.click('#labCtrl [data-i="1"]');
   await s.click('#labCtrl [data-i="0"]');
   await s.advance(2000);
-  assert.equal(s.find('#world').getAttribute('transform'),before);
-  assert.equal(s.pendingFrames,0);
+  assert.equal(s.find("#world").getAttribute("transform"), before);
+  assert.equal(s.pendingFrames, 0);
 });
 
-test('outward camera travel never hides or reveals individual islands mid-frame', async t => {
-  const s=await setup(t,{width:390});
-  await s.click('#nav .c-purple');await s.advance(5000);
-  assert.ok([...s.document.querySelectorAll('.isl')].some(n=>n.style.visibility==='hidden'));
-  await s.key('Escape');
-  for(let i=0;i<8;i++) {
+test("outward camera travel never hides or reveals individual islands mid-frame", async (t) => {
+  const s = await setup(t, { width: 390 });
+  await s.click("#nav .c-purple");
+  await s.advance(5000);
+  assert.ok(
+    [...s.document.querySelectorAll(".isl")].some(
+      (n) => n.style.visibility === "hidden",
+    ),
+  );
+  await s.key("Escape");
+  for (let i = 0; i < 8; i++) {
     await s.advance(100);
-    assert.ok([...s.document.querySelectorAll('.isl')].every(n=>n.style.visibility!=='hidden'));
+    assert.ok(
+      [...s.document.querySelectorAll(".isl")].every(
+        (n) => n.style.visibility !== "hidden",
+      ),
+    );
   }
 });

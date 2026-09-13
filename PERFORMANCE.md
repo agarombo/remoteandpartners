@@ -14,7 +14,9 @@ BIM viewer, territory, capture URLs and static DXF downloads.
   projection helper.
 - Features own their pending work. Leaving a view cancels its timers; a later
   navigation supersedes an earlier module load or queued territory destination.
-- Camera updates use elapsed time and one animation scheduler. Cached bounds
+- Camera updates use elapsed time and one animation scheduler. During travel,
+  a composited HTML layer handles pan/zoom; SVG coordinates are committed at rest.
+  Labels retain screen coordinates and interactive geometry remains available. Cached bounds
   avoid layout reads on each frame. Decorative motion is limited to the overview;
   JavaScript sleeps in settled viewers, reduced-motion mode and hidden documents.
 - The renderer skips unchanged state. Off-screen scenery is culled only when the
@@ -68,9 +70,10 @@ cost. Frame timings and these local readiness measurements are not Core Web
 Vitals or measurements from physical phones/production hosting. They vary with
 other machine activity, device/GPU, network and server caching/compression.
 
-The measurement build precedes the final travel-only culling correction. That
+The measurement build precedes the final camera/compositing corrections. That
 correction keeps all islands available while the camera moves. The final build
-also replaces panel backdrop blur with flat surfaces. The table is retained as
+also replaces panel backdrop blur with flat surfaces and uses a composited
+camera layer during travel. The table is retained as
 the measured intermediate build, rather than assigning unmeasured numbers to
 those last changes.
 
@@ -89,7 +92,8 @@ those last changes.
 - 33 comparisons against the baseline confirmed unchanged city geometry, all
   four sheets and annotations, BIM, territory and typology (normalizing generated
   clip IDs and projection styles). Existing DXF files remain byte-for-byte equal.
-- Normal-motion frames were captured in Chrome at DPR 2, and the reported local
+- Normal-motion frames were captured in Chrome at DPR 2 (109 desktop and 110
+  mobile frames; the SVG camera remained unchanged during outward travel), and the reported local
   Chrome preview was inspected directly during the Services-to-city transition.
 - WebKit installation was attempted but the browser download endpoints timed
   out, including the network-enabled retry. Safari/WebKit and physical devices

@@ -196,7 +196,14 @@ export function createFeature(app) {
     select,
     setFlat,
     resize() {
-      fit();
+      if (app.camera.mobile()) fit();
+      else
+        app.camera.go(
+          flat
+            ? { k: 3.3, x: isle.wx, y: isle.wy - 55 }
+            : app.camera.lab(isle, mode),
+          450,
+        );
     },
     key(direction) {
       if (mode === "autocad") select(sheet + direction);

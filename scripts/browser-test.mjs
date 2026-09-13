@@ -185,6 +185,46 @@ try {
     );
     await page.screenshot({ path: resolve(output, name + "-contact.png") });
     await page.keyboard.press("Escape");
+    // Exercise the reported outward transition with motion enabled.
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.locator("#nav .c-purple").click();
+    await page.waitForTimeout(2600);
+    const cameraFrames = await page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          const frames = [],
+            start = performance.now();
+          document.querySelector("#panel .back").click();
+          function tick(now) {
+            frames.push({
+              ms: now - start,
+              svg: document.getElementById("world").getAttribute("transform"),
+              css: document.getElementById("cameraLayer").style.transform,
+              hidden: [...document.querySelectorAll(".isl")].filter(
+                (node) => node.style.visibility === "hidden",
+              ).length,
+            });
+            if (now - start < 1200) requestAnimationFrame(tick);
+            else resolve(frames);
+          }
+          requestAnimationFrame(tick);
+        }),
+    );
+    const traveling = cameraFrames.filter(
+      (frame) => frame.ms > 30 && frame.ms < 950,
+    );
+    assert.ok(traveling.length > 5);
+    assert.equal(
+      new Set(traveling.map((frame) => frame.svg)).size,
+      1,
+      "The SVG camera stays unchanged during outward travel",
+    );
+    assert.ok(
+      traveling.every(
+        (frame) => frame.hidden === 0 && frame.css.startsWith("translate3d"),
+      ),
+    );
+    await page.emulateMedia({ reducedMotion: "reduce" });
     // Responsive reflow and keyboard access at narrow/wide sizes.
     for (const viewport of [
       { width: 320, height: 740 },
@@ -204,7 +244,7 @@ try {
       name,
       initialJavaScript: initial,
       checks:
-        "city, appearances, sheets, details, BIM, network, language, origin, territory, typology, contact draft, responsive overflow",
+        "city, appearances, sheets, details, BIM, network, language, origin, territory, typology, contact draft, outward animation, responsive overflow",
       errors,
     });
     await context.close();

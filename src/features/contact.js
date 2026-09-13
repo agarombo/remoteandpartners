@@ -142,6 +142,12 @@ export function createFeature(app) {
       app.request();
     },
     render,
+    resize() {
+      app.camera.go(
+        { ...app.camera.home(), k: app.camera.home().k * 0.92 },
+        450,
+      );
+    },
     tick(now) {
       if (!dots.length) return false;
       let live = false;

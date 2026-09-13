@@ -81,7 +81,11 @@ export function createFeature(app) {
     },
     render,
     setMode,
-    resize: fit,
+    resize() {
+      if (!app.state.arrived) return;
+      if (app.camera.mobile()) fit();
+      else app.camera.go({ k: 1.25, x: 0, y: MAPY }, 450);
+    },
     click(target) {
       const mode = target.closest("[data-m]");
       if (mode) {

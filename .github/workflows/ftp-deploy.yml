@@ -43,6 +43,10 @@ jobs:
     name: Deploy
     needs: build
     runs-on: ubuntu-latest
+    # FTP_SERVER / FTP_USERNAME / FTP_PASSWORD viven en este entorno, no como
+    # secrets del repositorio: sin declarar el entorno acá, el job no los ve
+    # y la acción de FTP falla con "Input required and not supplied".
+    environment: "CPanel Variables"
     steps:
       - name: Recuperar el build
         uses: actions/download-artifact@v4

@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Descargar el repositorio
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Armar los archivos estáticos a publicar
         run: |
@@ -33,7 +33,7 @@ jobs:
           find dist -type f | sort
 
       - name: Guardar el resultado del build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sitio-estatico
           path: dist/
@@ -49,13 +49,13 @@ jobs:
     environment: "CPanel Variables"
     steps:
       - name: Recuperar el build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: sitio-estatico
           path: dist
 
       - name: Subir por FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}

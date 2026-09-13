@@ -1,20 +1,54 @@
-name: Deploy por FTP
+name: Build y despliegue por FTP
 
-# Cada push a main sube el contenido del repositorio al servidor por FTP.
-# Las credenciales viven en GitHub → Settings → Secrets and variables → Actions,
-# nunca en este archivo.
+# El sitio no tiene nada que compilar: index.html es un único archivo
+# autocontenido (HTML + CSS + JS + fuentes en base64). El job "build" existe
+# igual, y arma en dist/ exactamente lo que debe quedar público: separa el
+# sitio de los archivos que sólo importan al repositorio (README, .gitignore,
+# este mismo workflow, y ciudad.html, que es la versión recortada para pegar
+# en el visor de Artifacts de Claude, no para publicar).
+#
+# Las credenciales viven en GitHub → Settings → Secrets and variables →
+# Actions, nunca en este archivo.
 on:
   push:
     branches: [ main ]
   workflow_dispatch: {}   # permite lanzarlo a mano desde la pestaña Actions
 
 jobs:
-  ftp-deploy:
-    name: Subir al servidor
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Descargar el repositorio
         uses: actions/checkout@v4
+
+      - name: Armar los archivos estáticos a publicar
+        run: |
+          set -e
+          mkdir -p dist
+          cp index.html dist/
+          cp LEEME.txt dist/
+          cp -r DXF dist/
+          echo "--- contenido de dist/ ---"
+          find dist -type f | sort
+
+      - name: Guardar el resultado del build
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitio-estatico
+          path: dist/
+          retention-days: 7
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Recuperar el build
+        uses: actions/download-artifact@v4
+        with:
+          name: sitio-estatico
+          path: dist
 
       - name: Subir por FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -25,9 +59,4 @@ jobs:
           # carpeta remota donde vive la web; si el hosting usa otra
           # (p.ej. "public_html/"), creá el secret FTP_SERVER_DIR con ese valor
           server-dir: ${{ secrets.FTP_SERVER_DIR || './' }}
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.github/**
-            **/README.md
-            **/ciudad.html
+          local-dir: dist/

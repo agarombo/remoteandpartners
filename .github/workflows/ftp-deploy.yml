@@ -56,7 +56,10 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          # carpeta remota donde vive la web; si el hosting usa otra
-          # (p.ej. "public_html/"), creá el secret FTP_SERVER_DIR con ese valor
-          server-dir: ${{ secrets.FTP_SERVER_DIR || './' }}
+          # cPanel (Namecheap) sirve el dominio principal desde public_html/,
+          # así que ese es el valor por defecto. Si la cuenta FTP ya nace
+          # encerrada ahí adentro (se elige un "Directory" al crearla en
+          # cPanel → FTP Accounts), creá el secret FTP_SERVER_DIR con "./"
+          # para no terminar subiendo a public_html/public_html/.
+          server-dir: ${{ secrets.FTP_SERVER_DIR || 'public_html/' }}
           local-dir: dist/

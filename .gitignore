@@ -4,3 +4,6 @@ desktop.ini
 # respaldos locales de cada cambio: viven en Drive, no en git
 # (son decenas de copias completas del sitio, no diffs)
 RESPALDO/
+
+node_modules/
+dist/

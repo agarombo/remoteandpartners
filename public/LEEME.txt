@@ -1,0 +1,28 @@
+SITIO WEB — Remote & Partners
+Ciudad isométrica interactiva. El sitio publicado es estático y se genera con Vite.
+
+DESARROLLO
+  npm ci
+  npm run dev
+
+VERIFICAR Y CONSTRUIR
+  npm run check
+  npm run preview
+
+PUBLICAR
+Subir todo el contenido de dist/, incluidos assets/ y DXF/, al directorio público
+de cPanel. No subir index.html desde la raíz del repositorio por separado.
+Cada push a main ejecuta el despliegue por FTP. Pedir permiso antes de publicar.
+
+ARTIFACT
+npm run artifact regenera ciudad.html para el visor de Artifacts de Claude.
+Ese archivo autocontenido no forma parte del sitio publicado.
+
+MODO CAPTURA
+?shot=city, plan, flat, bim, typo, map o rings.
+?shot=city&look=bw selecciona el aspecto.
+?shot=flat&sheet=0 selecciona una de las cuatro láminas (0 a 3).
+
+CONTACTO
+Los datos de contacto y el enlace opcional BOOKING están en src/content.js.
+Los archivos de DXF/ conservan sus direcciones de descarga.

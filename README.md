@@ -1,66 +1,86 @@
-# Remote & Partners — sitio web
+# Remote & Partners
 
-`index.html` es el sitio completo, autocontenido: la ciudad isométrica navegable
-de remoteandpartners.com. `ciudad.html` es una variante recortada (sin
-`<head>`/metadatos) pensada sólo para pegarla en el visor de Artifacts de
-Claude; no forma parte del sitio publicado.
+Ciudad isométrica interactiva hecha con **Vite y JavaScript nativo**. El hosting
+recibe archivos estáticos: no necesita Node ni un servidor de aplicaciones.
 
-`DXF/` son los planos exportados para editar en AutoCAD. `RESPALDO/` queda
-fuera del repositorio a propósito (ver `.gitignore`): son decenas de copias
-completas del sitio en distintos momentos, y viven en Google Drive, no en git.
+## Desarrollo local
 
-## Build y despliegue automático
+Usar Node 24 (el mismo que CI), o Node 22.13+.
 
-Cada push a `main` dispara `.github/workflows/ftp-deploy.yml`, en dos jobs:
+```sh
+npm ci
+npm run dev
+```
 
-1. **Build** — no hay nada que compilar (el sitio es un único HTML
-   autocontenido, sin bundler), pero el job arma en `dist/` exactamente lo
-   que debe quedar público: `index.html`, `DXF/` y `LEEME.txt`. Deja afuera
-   `README.md`, `.gitignore`, el propio workflow y `ciudad.html` (la versión
-   recortada para pegar en el visor de Artifacts, no para publicar). El
-   resultado queda además como artifact descargable del run, por si hace
-   falta revisarlo sin esperar al FTP.
-2. **Deploy** — toma ese `dist/` y lo sube por FTP.
+Vite muestra la URL local. Para comprobar el resultado que se publicaría:
 
-Antes de que funcione, cargá estos secrets en **Settings → Secrets and
-variables → Actions → New repository secret**:
+```sh
+npm run check
+npm run preview
+```
 
-| Secret            | Qué va ahí                                              |
-|-------------------|----------------------------------------------------------|
-| `FTP_SERVER`      | host del servidor FTP                                     |
-| `FTP_USERNAME`    | usuario FTP                                               |
-| `FTP_PASSWORD`    | contraseña FTP                                            |
-| `FTP_SERVER_DIR`  | opcional — sólo si la cuenta FTP no debe subir a `public_html/` |
+`check` ejecuta el análisis de código, genera `dist/` y prueba las interacciones
+del sitio compilado en un DOM simulado. Las pruebas comprueban navegación,
+idiomas, controles de sonido, planos, BIM, territorio, contacto, movimiento
+reducido y capturas. No miden FPS ni sustituyen una revisión visual en un navegador.
 
-Sin `FTP_SERVER_DIR`, el workflow sube a `public_html/`, que es donde cPanel
-sirve el dominio principal.
+## Archivos
 
-### Namecheap / cPanel
+- `index.html`: documento, metadatos y estructura del sitio.
+- `src/content.js`: textos en español/inglés, equipo, contacto y distritos.
+- `src/geometry.js`: geometría de la ciudad, planos y modelo BIM.
+- `src/app.js`: navegación, cámara y visores.
+- `src/motion.js`: planificación de fotogramas y actualización de transforms.
+- `src/site.css`: estilos y aspectos existentes.
+- `src/assets/`: retratos, favicon y fuentes. Vite genera nombres con hash.
+- `public/DXF/`: planos descargables; conservan las URLs `/DXF/...`.
+- `public/licenses/`: licencias de las fuentes del sitio.
+- `dist/`: salida generada, excluida de Git.
 
-El hosting es cPanel en Namecheap. Para cargar `FTP_SERVER`, `FTP_USERNAME` y
-`FTP_PASSWORD`:
+Las fuentes Metropolis existentes se convirtieron de OTF a WOFF2 conservando
+sus glifos. Los subconjuntos de IBM Plex Mono provienen del CSS original de
+Google Fonts, con sus rangos Unicode; ahora se sirven localmente. Los retratos
+conservan los archivos originales y se solicitan cuando se abre su contenido.
 
-1. Entrá a cPanel → **FTP Accounts**.
-2. Si no existe ya una cuenta para esto, creá una dedicada (mejor que usar el
-   login principal de cPanel) — en **Directory** dejala apuntando a
-   `public_html` para que sólo pueda tocar el sitio.
-3. El campo **FTP Server**/**Server** que muestra cPanel es el valor de
-   `FTP_SERVER` (suele ser el hostname del servidor, no `ftp.tudominio.com`
-   necesariamente — usá el que cPanel indique ahí).
-4. Usuario y contraseña de esa cuenta van en `FTP_USERNAME` y `FTP_PASSWORD`.
-5. Si al crear la cuenta el **Directory** ya quedó en `public_html` (o una
-   subcarpeta de ahí), la cuenta nace "encerrada" en esa carpeta: en ese caso
-   cargá el secret `FTP_SERVER_DIR` con el valor `./`, para no terminar
-   subiendo a `public_html/public_html/`. Si el **Directory** quedó en la
-   raíz de la cuenta de hosting, dejá `FTP_SERVER_DIR` sin crear.
+## Artifact autocontenido
 
-Si después del primer deploy el sitio no aparece o aparece duplicado en una
-subcarpeta, es señal de que hay que ajustar ese secret en un sentido o el
-otro.
+`ciudad.html` conserva la variante para pegar en el visor de Artifacts de Claude.
+Se genera desde las mismas fuentes, con JavaScript, imágenes y fuentes incrustados:
 
-Para lanzar el despliegue sin esperar un push, andá a la pestaña **Actions**
-del repositorio, elegí "Build y despliegue por FTP" y usá "Run workflow".
+```sh
+npm run artifact
+```
 
-`ciudad.html` sigue siendo manual: se regenera con el mismo comando de
-siempre y se commitea aparte, porque depende de coincidir de forma exacta con
-la cabecera de `index.html` y no conviene correrlo sin supervisión en CI.
+No editarlo a mano. Regenerarlo al modificar `src/` y commitearlo junto al cambio.
+No forma parte de `dist/` ni del sitio publicado.
+
+## Capturas
+
+Se mantienen `?shot=city`, `plan`, `flat`, `bim`, `typo`, `map` y `rings`.
+`?shot=city&look=bw` cambia el aspecto y `?shot=flat&sheet=0` elige la lámina
+(índices de 0 a 3). El resto de las visitas conserva la interfaz normal.
+
+## Despliegue por FTP
+
+**Cada push a `main` publica en el dominio real. Requiere permiso explícito del
+usuario para ese push, según `AGENTS.md`.** Los cambios se dejan commiteados
+localmente hasta tener esa autorización.
+
+El workflow `.github/workflows/ftp-deploy.yml` instala dependencias con `npm ci`,
+ejecuta `npm run check` y sube **todo `dist/`** por FTP. No subir el `index.html`
+fuente por separado: depende de los assets que genera Vite.
+
+Los secrets permanecen en el entorno **CPanel Variables**:
+
+| Secret | Valor |
+| --- | --- |
+| `FTP_SERVER` | Host del servidor FTP de cPanel |
+| `FTP_USERNAME` | Usuario FTP |
+| `FTP_PASSWORD` | Contraseña FTP |
+| `FTP_SERVER_DIR` | Opcional; por defecto `public_html/` |
+
+Si la cuenta FTP ya está encerrada en `public_html`, usar `./` como
+`FTP_SERVER_DIR`. El workflow también admite ejecución manual, que igualmente
+publica y requiere autorización. `RESPALDO/` sigue fuera de Git.
+
+Ver [PERFORMANCE.md](PERFORMANCE.md) para el alcance y los resultados de la refactorización.

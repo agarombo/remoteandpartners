@@ -1,11 +1,7 @@
 name: Despliegue por FTP
 
-# El sitio no tiene nada que compilar: index.html es un único archivo
-# autocontenido (HTML + CSS + JS + fuentes en base64). Por eso hay un solo
-# job, que arma en dist/ exactamente lo que debe quedar público: separa el
-# sitio de los archivos que sólo importan al repositorio (README, .gitignore,
-# este mismo workflow, y ciudad.html, que es la versión recortada para pegar
-# en el visor de Artifacts de Claude, no para publicar).
+# Vite genera en dist/ el HTML y los assets optimizados, junto con public/.
+# El sitio publicado sigue siendo estático; Node sólo se usa durante el build.
 #
 # Las credenciales viven en GitHub → Settings → Secrets and variables →
 # Actions, nunca en este archivo.
@@ -26,15 +22,17 @@ jobs:
       - name: Descargar el repositorio
         uses: actions/checkout@v7
 
-      - name: Armar los archivos estáticos a publicar
-        run: |
-          set -e
-          mkdir -p dist
-          cp index.html dist/
-          cp LEEME.txt dist/
-          cp -r DXF dist/
-          echo "--- contenido de dist/ ---"
-          find dist -type f | sort
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Verificar y construir el sitio
+        run: npm run check
 
       - name: Subir por FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0

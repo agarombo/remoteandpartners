@@ -114,6 +114,11 @@ export function createCamera(state, request) {
       committed
     ) {
       const journey = travel;
+      // A cold capture (initial load or resize) starts from the actual pose,
+      // with no HTML scale leaking into its bounds or interaction coordinates.
+      committed = { k: pose.k, x: anchor[0] - pose.x * pose.k, y: anchor[1] - pose.y * pose.k };
+      setAttribute(world, "transform", `translate(${committed.x.toFixed(2)},${committed.y.toFixed(2)}) scale(${committed.k.toFixed(4)})`);
+      layer.style.transform = "none";
       preparedTravel = journey;
       preparation = new window.AbortController();
       const controller = preparation;

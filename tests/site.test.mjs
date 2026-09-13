@@ -258,6 +258,7 @@ test("standalone Artifact still runs with embedded fonts and portraits", async (
   const s = await setup(t, { original: "ciudad.html", reduced: true });
   await s.click("#nav .c-orange");
   await s.advance(3000);
+  await s.click('#panel [data-p="0"]');
   assert.match(s.find(".portrait").src, /^data:image\/jpeg;base64,/);
   await s.key("Escape");
 });

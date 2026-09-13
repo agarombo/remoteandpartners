@@ -45,6 +45,10 @@ async function embeddedFonts() {
       if (rule.type !== window.CSSRule.FONT_FACE_RULE) continue;
       const source = rule.style.getPropertyValue("src");
       const match = source.match(/url\(["']?([^"')]+)["']?\)/);
+      if (match?.[1].startsWith("data:")) {
+        faces.push(Promise.resolve(rule.cssText));
+        continue;
+      }
       if (!match || !/(metropolis-|mono-.*-latin)/.test(match[1])) continue;
       faces.push(
         (async () => {
@@ -124,6 +128,7 @@ export function createRaster(stage, layer, request) {
     }
     surface.remove();
     surface.replaceChildren();
+    imageBase = imageRegion = imageViewport = lastMatrix = null;
     delete layer.dataset.raster;
   }
   function resume(matrix, viewport) {

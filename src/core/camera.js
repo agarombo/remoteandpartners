@@ -13,10 +13,22 @@ export function createCamera(state, request) {
     anchor = null,
     mobileAnchor = null;
   let viewport, committed;
+  const webkit = /AppleWebKit/.test(window.navigator.userAgent) &&
+    /Safari\//.test(window.navigator.userAgent) &&
+    !/(Chrome|Chromium|Edg|OPR)\//.test(window.navigator.userAgent);
+  let raster, rasterModule, preparation, preparedTravel, rasterFailed = false;
+
+  function cancelPreparation() {
+    preparation?.abort();
+    preparation = null;
+    preparedTravel = null;
+  }
   const mobile = () => window.innerWidth < 820;
   const zoom = (value) => (mobile() ? value * 0.55 : value);
   const home = () => ({ k: mobile() ? 0.31 : 0.57, x: 0, y: 0 });
   function resize() {
+    cancelPreparation();
+    raster?.clear();
     const rect = document.querySelector(".app").getBoundingClientRect();
     const factor = Math.max(rect.width / 1600, rect.height / 1000);
     const width = rect.width / factor,
@@ -61,6 +73,9 @@ export function createCamera(state, request) {
     return state.current ? [620, 540] : [810, 535];
   }
   function go(target, duration = 1000) {
+    cancelPreparation();
+    if (anchor && !state.reduced && !state.capture)
+      raster?.resume({ k: pose.k, x: anchor[0] - pose.x * pose.k, y: anchor[1] - pose.y * pose.k }, viewport);
     travel = {
       from: { ...pose },
       to: { ...target },
@@ -71,7 +86,46 @@ export function createCamera(state, request) {
     request();
   }
   function render(now, elapsed) {
-    if (travel) {
+    const next = destination();
+    if (!anchor || state.reduced) anchor = next;
+    const cached = webkit && !state.reduced && !state.capture && !rasterFailed;
+    if (!cached) {
+      cancelPreparation();
+      raster?.clear();
+    }
+    if (cached && travel && preparedTravel !== travel && committed) {
+      const journey = travel;
+      preparedTravel = journey;
+      preparation = new window.AbortController();
+      const controller = preparation;
+      const frames = Array.from({ length: 65 }, (_, index) => {
+        const t = index / 64;
+        const p = Object.fromEntries(["k", "x", "y"].map((key) => [
+          key, journey.from[key] + (journey.to[key] - journey.from[key]) * ease(t),
+        ]));
+        const a = anchor.map((value, i) => approach(value, next[i], t * journey.duration));
+        return { k: p.k, x: a[0] - p.x * p.k, y: a[1] - p.y * p.k };
+      });
+      // Include the fully settled anchor, after its trailing easing finishes.
+      frames.push({ k: journey.to.k, x: next[0] - journey.to.x * journey.to.k, y: next[1] - journey.to.y * journey.to.k });
+      rasterModule ||= import("./raster.js");
+      rasterModule.then((module) => {
+        controller.signal.throwIfAborted();
+        raster ||= module.createRaster(byId("stage"), layer);
+        return raster.prepare({ viewport, base: { ...committed }, frames, signal: controller.signal });
+      }).catch(() => {
+        if (!controller.signal.aborted) {
+          rasterFailed = true;
+          raster?.clear();
+        }
+      }).finally(() => {
+        if (preparation !== controller) return;
+        preparation = null;
+        journey.start = performance.now();
+        request();
+      });
+    }
+    if (travel && !preparation) {
       const progress = state.reduced
         ? 1
         : Math.min(1, (now - travel.start) / Math.max(1, travel.duration));
@@ -82,9 +136,7 @@ export function createCamera(state, request) {
       if (progress === 1) travel = null;
       if (pose.k !== oldScale) updateScale();
     }
-    const next = destination();
-    if (!anchor || state.reduced) anchor = next;
-    else anchor = anchor.map((value, i) => approach(value, next[i], elapsed));
+    if (!preparation) anchor = anchor.map((value, i) => approach(value, next[i], elapsed));
     const moving = !!travel || anchor.some((value, i) => value !== next[i]);
     const matrix = {
       k: pose.k,
@@ -96,6 +148,7 @@ export function createCamera(state, request) {
     // relative HTML transform over the existing scene instead of repainting
     // every vector/filter for each intermediate camera position.
     if (!committed || !moving) {
+      if (!moving) raster?.rest();
       const transform = `translate(${matrix.x.toFixed(2)},${matrix.y.toFixed(2)}) scale(${matrix.k.toFixed(4)})`;
       setAttribute(world, "transform", transform);
       if (layer.style.transform !== "none") layer.style.transform = "none";
@@ -110,7 +163,9 @@ export function createCamera(state, request) {
       const y =
         viewport.factor * (matrix.y - scale * committed.y) +
         (1 - scale) * offsetY;
-      layer.style.transform = `translate3d(${x.toFixed(3)}px,${y.toFixed(3)}px,0) scale(${scale.toFixed(6)})`;
+      const transform = `translate3d(${x.toFixed(3)}px,${y.toFixed(3)}px,0) scale(${scale.toFixed(6)})`;
+      if (raster?.active) raster.move(matrix, viewport);
+      else layer.style.transform = transform;
     }
     toggle(document.documentElement, "still", !moving);
     return matrix;
@@ -216,6 +271,8 @@ export function createCamera(state, request) {
         y: box.y + box.height / 2,
       };
       travel = null;
+      cancelPreparation();
+      raster?.clear();
       anchor = [800, 500];
       render(performance.now(), 0);
     },

@@ -252,6 +252,11 @@ body{
 .scene-background, .scene-optics{ transform:translateZ(0); }
 #cameraLayer{ position:absolute; inset:0; transform-origin:0 0; will-change:transform; }
 #stage{ overflow:visible; }
+.camera-raster{ position:absolute; pointer-events:none; }
+.raster-layer{ position:absolute; inset:0; transform-origin:0 0; will-change:transform; pointer-events:none; }
+.raster-hit{ position:absolute; padding:0; border:0; background:transparent; color:transparent; pointer-events:auto; cursor:pointer; }
+/* Freeze SVG effects only while WebKit prepares/displays the travel bitmap. */
+#stage.rasterizing *{ transition:none !important; animation-play-state:paused !important; }
 /* todo el trazo de la escena va a grosor constante: si se escalara con la
    cámara desaparecería al alejarse y engordaría al aterrizar */
 #islands polygon, #islands line, #islands path, #islands polyline,

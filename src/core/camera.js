@@ -92,6 +92,7 @@ export function createCamera(state, request) {
     travel = {
       from: { ...pose },
       to: { ...target },
+      anchor: anchor?.slice(),
       start: performance.now(),
       duration,
     };
@@ -109,8 +110,8 @@ export function createCamera(state, request) {
     if (
       cached &&
       travel &&
-      !raster?.available &&
       preparedTravel !== travel &&
+      (!raster?.available || raster.dirty || raster.needsDetail(travel.to)) &&
       committed
     ) {
       const journey = travel;
@@ -139,6 +140,11 @@ export function createCamera(state, request) {
             viewport,
             base: { ...committed },
             signal: controller.signal,
+            target: {
+              k: journey.to.k,
+              x: next[0] - journey.to.x * journey.to.k,
+              y: next[1] - journey.to.y * journey.to.k,
+            },
           });
         })
         .catch(() => {
@@ -151,6 +157,7 @@ export function createCamera(state, request) {
           if (preparation !== controller) return;
           preparation = null;
           journey.start = performance.now();
+          if (raster?.dirty) preparedTravel = null;
           request();
         });
     }
@@ -162,11 +169,21 @@ export function createCamera(state, request) {
         oldScale = pose.k;
       for (const key of ["k", "x", "y"])
         pose[key] = travel.from[key] + (travel.to[key] - travel.from[key]) * t;
+      if (cached)
+        anchor = next.map(
+          (value, i) =>
+            (travel.anchor?.[i] ?? value) +
+            (value - (travel.anchor?.[i] ?? value)) * t,
+        );
       if (progress === 1) travel = null;
       if (pose.k !== oldScale) updateScale();
     }
     if (!preparation)
-      anchor = anchor.map((value, i) => approach(value, next[i], elapsed));
+      anchor = cached
+        ? travel
+          ? anchor
+          : next
+        : anchor.map((value, i) => approach(value, next[i], elapsed));
     const moving = !!travel || anchor.some((value, i) => value !== next[i]);
     const matrix = {
       k: pose.k,

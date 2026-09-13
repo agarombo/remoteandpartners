@@ -324,6 +324,17 @@ try {
   await page.locator("#nav .c-purple").click();
   await page.locator('#panel.open [data-lab="autocad"]').waitFor();
   await page.close();
+  if (engine === "webkit") {
+    const fallback = await browser.newPage();
+    await fallback.route("**/raster-*.js", (route) => route.abort());
+    await fallback.goto("http://127.0.0.1:4182/");
+    await fallback.locator("#nav .c-purple").click();
+    await fallback.locator('#panel.open [data-lab="autocad"]').waitFor();
+    await fallback.waitForFunction(() => document.documentElement.classList.contains("still"));
+    assert.equal(await fallback.locator(".camera-raster").count(), 0);
+    assert.notEqual(await fallback.locator("#stage").evaluate(node => node.style.opacity), "0", "A failed optional cache download leaves the live SVG visible");
+    await fallback.close();
+  }
   await writeFile(
     resolve(output, "report.json"),
     JSON.stringify(report, null, 2),

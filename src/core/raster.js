@@ -1,42 +1,8 @@
-// WebKit repeatedly rasterizes filtered SVGs while their HTML parent scales.
-// Keep the live, accessible SVG in place and use one bounded bitmap for travel.
+// WebKit travels over bounded bitmap layers while the live SVG stays interactive
+// at rest. A separate detail crop retains destination resolution during zoom-in.
 const NS = "http://www.w3.org/2000/svg";
-const properties = [
-  "color",
-  "fill",
-  "fill-opacity",
-  "fill-rule",
-  "stroke",
-  "stroke-width",
-  "stroke-opacity",
-  "stroke-linecap",
-  "stroke-linejoin",
-  "stroke-miterlimit",
-  "stroke-dasharray",
-  "stroke-dashoffset",
-  "opacity",
-  "visibility",
-  "display",
-  "filter",
-  "clip-path",
-  "paint-order",
-  "vector-effect",
-  "font-family",
-  "font-size",
-  "font-weight",
-  "font-style",
-  "letter-spacing",
-  "text-anchor",
-  "dominant-baseline",
-  "stop-color",
-  "stop-opacity",
-  "transform",
-  "transform-origin",
-  "transform-box",
-  "shape-rendering",
-  "mix-blend-mode",
-];
 const pause = () => new Promise((resolve) => setTimeout(resolve, 0));
+const limit = 4 * 1024 * 1024;
 
 async function embeddedFonts() {
   const faces = [];
@@ -71,32 +37,63 @@ async function embeddedFonts() {
   return (await Promise.all(faces)).join("");
 }
 
+function sceneCSS() {
+  return [...document.styleSheets]
+    .flatMap((sheet) => [...sheet.cssRules])
+    .filter((rule) => rule.type !== window.CSSRule.FONT_FACE_RULE)
+    .map((rule) =>
+      rule.cssText
+        .replace(/\bbody\b/g, ".snapshot-body")
+        .replace(/\bhtml\b/g, ":root"),
+    )
+    .join("");
+}
+
 export function createRaster(stage, layer, request) {
-  let canvas = null,
+  let canvas,
+    detail,
     active = false,
     imageBase,
-    lastMatrix,
     imageViewport,
-    imageRegion;
+    imageRegion,
+    lastMatrix;
   let revision = 0,
-    savedRevision = -1;
+    savedRevision = -1,
+    quality = 0;
   const fonts = embeddedFonts().catch(() => "");
+  const css = sceneCSS();
   const invalidate = () => {
     revision++;
     request();
   };
-  new window.MutationObserver(invalidate).observe(
-    stage.querySelector("#world"),
-    {
-      attributes: true,
-      childList: true,
-      subtree: true,
-      characterData: true,
-    },
-  );
+  const world = stage.querySelector("#world");
+  new window.MutationObserver((records) => {
+    // Camera/culling writes do not change the artwork in the reusable cache.
+    if (
+      records.some(
+        (record) =>
+          !(record.target === world && record.attributeName === "transform") &&
+          !(
+            record.target.matches?.(".isl") &&
+            ["style", "data-offscreen"].includes(record.attributeName)
+          ),
+      )
+    )
+      invalidate();
+  }).observe(world, {
+    attributes: true,
+    childList: true,
+    subtree: true,
+    characterData: true,
+  });
+  new window.MutationObserver(invalidate).observe(document.body, {
+    attributes: true,
+    attributeFilter: ["class", "data-view"],
+  });
   const surface = document.createElement("div");
   surface.className = "raster-layer";
   surface.setAttribute("aria-hidden", "true");
+
   function move(matrix, viewport) {
     lastMatrix = matrix;
     if (!imageBase) return;
@@ -118,17 +115,22 @@ export function createRaster(stage, layer, request) {
     active = false;
     delete layer.dataset.raster;
   }
+  function release(node) {
+    if (node) {
+      node.remove();
+      node.width = node.height = 0;
+    }
+  }
   function clear() {
     rest();
     stage.classList.remove("rasterizing");
-    if (canvas) {
-      canvas.remove();
-      canvas.width = canvas.height = 0;
-      canvas = null;
-    }
+    release(canvas);
+    release(detail);
+    canvas = detail = null;
     surface.remove();
     surface.replaceChildren();
     imageBase = imageRegion = imageViewport = lastMatrix = null;
+    quality = 0;
     delete layer.dataset.raster;
   }
   function resume(matrix, viewport) {
@@ -140,161 +142,228 @@ export function createRaster(stage, layer, request) {
     layer.style.transform = "none";
     layer.dataset.raster = "ready";
   }
-  async function prepare({ viewport, base, signal, display = true }) {
-    if (!display) {
-      const transitions = stage
-        .getAnimations({ subtree: true })
-        .filter(
-          (animation) =>
-            animation.playState === "running" &&
-            animation.effect.getTiming().iterations !== Infinity,
-        );
-      await Promise.all(
-        transitions.map((animation) => animation.finished.catch(() => {})),
-      );
-      signal.throwIfAborted();
-    }
+  async function prepare({
+    viewport,
+    base,
+    signal,
+    display = true,
+    target = base,
+  }) {
     const version = revision;
     const fontCSS = await fonts;
     signal.throwIfAborted();
-    if (display) stage.classList.add("rasterizing");
     layer.dataset.raster = "preparing";
-    // Let the navigation/panel update reach the screen before copying the scene.
     await pause();
     signal.throwIfAborted();
     const { factor, left, top, width, height } = viewport;
-    const w = width * factor,
-      h = height * factor;
-    // Cache the whole scene, including culled islands, so the next destination
-    // can start immediately without rebuilding a viewport-sized image first.
     const origin = document.querySelector(".app").getBoundingClientRect();
-    const bounds = stage.querySelector("#world").getBoundingClientRect();
-    let x0 = Math.min(0, bounds.x - origin.x),
-      y0 = Math.min(0, bounds.y - origin.y);
-    let x1 = Math.max(w, bounds.right - origin.x),
-      y1 = Math.max(h, bounds.bottom - origin.y);
-    const margin = 128;
-    x0 = Math.floor(x0 - margin);
-    y0 = Math.floor(y0 - margin);
-    x1 = Math.ceil(x1 + margin);
-    y1 = Math.ceil(y1 + margin);
+    const mapmode = document.body.classList.contains("mapmode");
+    const hidden = mapmode
+      ? "#islands,#links,#ships,#usernode"
+      : "#usmap,#typo";
+    const copy = stage.cloneNode(true);
+    copy.className.baseVal = document.documentElement.className;
+    copy.setAttribute("data-look", document.documentElement.dataset.look);
+    copy.style.cssText = "opacity:1;position:static;overflow:visible";
+    for (const node of copy.querySelectorAll(hidden)) node.remove();
+    // Body-dependent scene rules also apply inside the standalone SVG image.
+    const body = document.createElementNS(NS, "g");
+    body.setAttribute("class", "snapshot-body " + document.body.className);
+    body.setAttribute("data-view", document.body.dataset.view);
+    const copyWorld = copy.querySelector("#world");
+    copyWorld.replaceWith(body);
+    body.append(copyWorld);
+    for (const node of body.querySelectorAll(hidden)) node.remove();
+    for (const node of body.querySelectorAll('.isl[data-offscreen="true"]'))
+      node.style.visibility = "";
+    const sheet = document.createElementNS(NS, "style");
+    sheet.textContent =
+      fontCSS +
+      css +
+      "\n*{transition:none!important;animation:none!important} #stage{width:100%;height:100%;opacity:1!important} .isl{filter:none!important}";
+    copy.prepend(sheet);
+    copy
+      .querySelector("defs")
+      .append(document.getElementById("blur").cloneNode(true));
+    copy.setAttribute("xmlns", NS);
+    // Preserve constant-width strokes at either bitmap resolution. Colors,
+    // gradients, text and transforms come directly from the shared stylesheet.
+    // Pruned branches change the node list; walk each retained top-level group.
+    for (const group of body.querySelector("#world").children) {
+      const live = stage.querySelector("#" + group.id);
+      const nodes = [live, ...live.querySelectorAll("*")];
+      const copies = [group, ...group.querySelectorAll("*")];
+      for (let i = 0; i < nodes.length; i++) {
+        if (i && i % 1200 === 0) {
+          await pause();
+          signal.throwIfAborted();
+        }
+        const computed = window.getComputedStyle(nodes[i]);
+        if (computed.vectorEffect !== "non-scaling-stroke") continue;
+        for (const name of [
+          "stroke-width",
+          "stroke-dasharray",
+          "stroke-dashoffset",
+        ]) {
+          const value = computed.getPropertyValue(name);
+          if (!value || value === "none" || value === "0px") continue;
+          copies[i].style.setProperty(
+            name,
+            value.replace(
+              /-?\d*\.?\d+(?:px)?/g,
+              (number) => `calc(${parseFloat(number)}px * var(--raster-ratio))`,
+            ),
+            "important",
+          );
+        }
+      }
+    }
+    // Exclude hidden territory from city bounds, and vice versa.
+    const bounds = [...world.children]
+      .filter((node) => !node.matches(hidden + ",.hide"))
+      .map((node) => node.getBoundingClientRect())
+      .filter((box) => box.width && box.height);
+    const x0 = Math.floor(
+      Math.min(0, ...bounds.map((box) => box.x - origin.x)) - 64,
+    );
+    const y0 = Math.floor(
+      Math.min(0, ...bounds.map((box) => box.y - origin.y)) - 64,
+    );
+    const x1 = Math.ceil(
+      Math.max(width * factor, ...bounds.map((box) => box.right - origin.x)) +
+        64,
+    );
+    const y1 = Math.ceil(
+      Math.max(height * factor, ...bounds.map((box) => box.bottom - origin.y)) +
+        64,
+    );
     const widthPx = x1 - x0,
       heightPx = y1 - y0;
     const ratio = Math.min(
       window.devicePixelRatio || 1,
-      Math.sqrt((4 * 1024 * 1024) / (widthPx * heightPx)),
+      Math.sqrt(limit / (widthPx * heightPx)),
       4096 / Math.max(widthPx, heightPx),
     );
-    const copy = stage.cloneNode(true);
-    const nodes = [stage, ...stage.querySelectorAll("*")];
-    const copies = [copy, ...copy.querySelectorAll("*")];
-    const styles = new Map();
-    for (let i = 0; i < nodes.length; i++) {
-      if (i % 400 === 0) {
-        await pause();
+    async function bitmap(region, density) {
+      copy.setAttribute(
+        "width",
+        Math.max(1, Math.round(region.width * density)),
+      );
+      copy.setAttribute(
+        "height",
+        Math.max(1, Math.round(region.height * density)),
+      );
+      copy.style.setProperty("--raster-ratio", density);
+      copy.setAttribute(
+        "viewBox",
+        `${left + region.x / factor} ${top + region.y / factor} ${region.width / factor} ${region.height / factor}`,
+      );
+      copy.setAttribute("preserveAspectRatio", "none");
+      const url = window.URL.createObjectURL(
+        new window.Blob([new window.XMLSerializer().serializeToString(copy)], {
+          type: "image/svg+xml",
+        }),
+      );
+      const image = new window.Image();
+      const abort = () => {
+        image.src = "";
+      };
+      signal.addEventListener("abort", abort, { once: true });
+      try {
+        image.src = url;
+        await image.decode();
         signal.throwIfAborted();
+        const next = document.createElement("canvas");
+        next.width = +copy.getAttribute("width");
+        next.height = +copy.getAttribute("height");
+        next.getContext("2d").drawImage(image, 0, 0, next.width, next.height);
+        next.className = "camera-raster";
+        next.setAttribute("aria-hidden", "true");
+        return next;
+      } finally {
+        signal.removeEventListener("abort", abort);
+        window.URL.revokeObjectURL(url);
       }
-      const computed = window.getComputedStyle(nodes[i]);
-      const culled = nodes[i].closest('.isl[data-offscreen="true"]');
-      const fixedStroke =
-        computed.getPropertyValue("vector-effect") === "non-scaling-stroke";
-      const css = properties
-        .map((name) => {
-          let value = (
-            name === "visibility" && culled
-              ? "visible"
-              : computed.getPropertyValue(name)
-          ).replace(/url\(["']?[^)#]*#([^"')]+)["']?\)/g, "url(#$1)");
-          if (
-            fixedStroke &&
-            ["stroke-width", "stroke-dasharray", "stroke-dashoffset"].includes(
-              name,
-            )
-          )
-            value = value.replace(/-?\d*\.?\d+(?:px)?/g, (number) =>
-              String(parseFloat(number) * ratio),
-            );
-          return value ? `${name}:${value}` : "";
-        })
-        .filter(Boolean)
-        .join(";");
-      if (!styles.has(css)) styles.set(css, "r" + styles.size);
-      copies[i].removeAttribute("style");
-      copies[i].setAttribute("class", styles.get(css));
     }
-    const sheet = document.createElementNS(NS, "style");
-    sheet.textContent =
-      fontCSS + [...styles].map(([css, name]) => `.${name}{${css}}`).join("");
-    copy.prepend(sheet);
-    // The haze filter is defined in the separate static background SVG.
-    copy
-      .querySelector("defs")
-      .append(document.getElementById("blur").cloneNode(true));
-    copy.removeAttribute("class");
-    copy.setAttribute("xmlns", NS);
-    copy.setAttribute("width", Math.max(1, Math.round(widthPx * ratio)));
-    copy.setAttribute("height", Math.max(1, Math.round(heightPx * ratio)));
-    copy.setAttribute(
-      "viewBox",
-      `${left + x0 / factor} ${top + y0 / factor} ${widthPx / factor} ${heightPx / factor}`,
-    );
-    copy.setAttribute("preserveAspectRatio", "none");
-    const url = window.URL.createObjectURL(
-      new window.Blob([new window.XMLSerializer().serializeToString(copy)], {
-        type: "image/svg+xml",
-      }),
-    );
-    const image = new window.Image();
-    const abort = () => {
-      image.src = "";
-    };
-    signal.addEventListener("abort", abort, { once: true });
+    let next, nextDetail;
     try {
-      image.src = url;
-      await image.decode();
+      next = await bitmap(
+        { x: x0, y: y0, width: widthPx, height: heightPx },
+        ratio,
+      );
+      const scale = target.k / base.k;
+      // Destination viewport expressed in the source snapshot's screen space.
+      const tx =
+        factor * (target.x - scale * base.x) - (1 - scale) * left * factor;
+      const ty =
+        factor * (target.y - scale * base.y) - (1 - scale) * top * factor;
+      const bx = Math.max(0, Math.floor((-tx / scale - x0) * ratio));
+      const by = Math.max(0, Math.floor((-ty / scale - y0) * ratio));
+      const bw = Math.min(
+        next.width - bx,
+        Math.ceil(((width * factor) / scale) * ratio) + 2,
+      );
+      const bh = Math.min(
+        next.height - by,
+        Math.ceil(((height * factor) / scale) * ratio) + 2,
+      );
+      const region = {
+        x: x0 + bx / ratio,
+        y: y0 + by / ratio,
+        width: bw / ratio,
+        height: bh / ratio,
+      };
+      const density = Math.min(
+        (window.devicePixelRatio || 1) * scale,
+        Math.sqrt(limit / (region.width * region.height)),
+        4096 / Math.max(region.width, region.height),
+      );
+      if (density > ratio * 1.2 && bw > 0 && bh > 0) {
+        nextDetail = await bitmap(region, density);
+        // Replace this rectangle instead of double-painting translucent shadows.
+        next.getContext("2d").clearRect(bx, by, bw, bh);
+        nextDetail.style.cssText = `left:${bx}px;top:${by}px;width:${bw}px;height:${bh}px`;
+      }
       signal.throwIfAborted();
-      if (!display && version !== revision) return;
-      const next = document.createElement("canvas");
-      next.width = Math.max(1, Math.round(widthPx * ratio));
-      next.height = Math.max(1, Math.round(heightPx * ratio));
-      next.getContext("2d").drawImage(image, 0, 0, next.width, next.height);
-      next.className = "camera-raster";
-      next.setAttribute("aria-hidden", "true");
-      next.style.cssText = "left:0;top:0;width:100%;height:100%";
-      canvas?.remove();
-      if (canvas) canvas.width = canvas.height = 0;
+      if (version !== revision) {
+        release(next);
+        release(nextDetail);
+        return;
+      }
+      release(canvas);
+      release(detail);
       canvas = next;
+      detail = nextDetail;
       imageBase = base;
       imageViewport = viewport;
       imageRegion = { x: x0, y: y0, ratio };
       savedRevision = version;
+      quality = target.k;
       surface.style.width = next.width + "px";
       surface.style.height = next.height + "px";
+      canvas.style.cssText = "left:0;top:0;width:100%;height:100%";
       surface.replaceChildren(canvas);
-      // Preserve district clicks during travel without repainting the SVG.
+      if (detail) surface.append(detail);
+      surface.dataset.scene = mapmode ? "territory" : "city";
       for (const island of stage.querySelectorAll('.isl[role="button"]')) {
-        const bounds = island.getBoundingClientRect();
+        if (mapmode) break;
+        const box = island.getBoundingClientRect();
         const hit = document.createElement("span");
         hit.dataset.island = island.dataset.island;
         hit.className = "raster-hit";
-        hit.style.cssText = `left:${(bounds.x - origin.x - x0) * ratio}px;top:${(bounds.y - origin.y - y0) * ratio}px;width:${bounds.width * ratio}px;height:${bounds.height * ratio}px`;
+        hit.style.cssText = `left:${(box.x - origin.x - x0) * ratio}px;top:${(box.y - origin.y - y0) * ratio}px;width:${box.width * ratio}px;height:${box.height * ratio}px`;
         surface.append(hit);
       }
-      if (display) {
-        active = true;
-        layer.after(surface);
-        move(lastMatrix || base, viewport);
-        layer.style.transform = "none";
-        stage.style.opacity = "0";
-        layer.dataset.raster = "ready";
-      } else {
-        stage.classList.remove("rasterizing");
-        delete layer.dataset.raster;
-      }
+      if (display || active) {
+        stage.classList.add("rasterizing");
+        resume(lastMatrix || base, viewport);
+      } else delete layer.dataset.raster;
+    } catch (error) {
+      release(next);
+      release(nextDetail);
+      throw error;
     } finally {
-      signal.removeEventListener("abort", abort);
-      window.URL.revokeObjectURL(url);
-      if (!display && !signal.aborted && !active) delete layer.dataset.raster;
+      if (!signal.aborted && !active) delete layer.dataset.raster;
     }
   }
   return {
@@ -312,6 +381,9 @@ export function createRaster(stage, layer, request) {
     },
     get dirty() {
       return savedRevision !== revision;
+    },
+    needsDetail(target) {
+      return target.k > quality * 1.1;
     },
   };
 }

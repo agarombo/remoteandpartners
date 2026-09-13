@@ -375,3 +375,13 @@ test("outward camera travel never hides or reveals individual islands mid-frame"
     );
   }
 });
+
+test('an open drawing refits when crossing the mobile/desktop breakpoint', async t => {
+  const s=await setup(t,{width:390,reduced:true});
+  await s.click('#nav .c-purple');await s.click('#panel [data-lab="autocad"]');await s.advance(2500);
+  const mobile=s.find('#world').getAttribute('transform');
+  s.window.innerWidth=1440;s.window.dispatchEvent(new s.window.Event('resize'));await s.advance(1000);
+  assert.match(s.find('#world').getAttribute('transform'),/scale\(3\.3000\)/);
+  s.window.innerWidth=390;s.window.dispatchEvent(new s.window.Event('resize'));await s.advance(1000);
+  assert.equal(s.find('#world').getAttribute('transform'),mobile);
+});

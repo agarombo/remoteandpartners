@@ -115,6 +115,10 @@ try {
         "Mobile drawing fits above its controls",
       );
     }
+    await page.setViewportSize({width:name==="mobile"?1440:390,height:name==="mobile"?900:844});
+    await page.waitForTimeout(150);
+    await page.setViewportSize({width,height});
+    await page.waitForTimeout(150);
     await page.locator("#labDet").click();
     await page.locator("#detail.on #detClose").waitFor();
     await page.screenshot({ path: resolve(output, name + "-detail.png") });

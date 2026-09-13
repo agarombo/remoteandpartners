@@ -1,6 +1,7 @@
 # Performance rebuild
 
-The site retains Vite and native JavaScript. This rebuild replaces the application
+The site retains Vite and native JavaScript. Final initial JavaScript is 53.3 KB
+(about 47% smaller than the 100.6 KB baseline). This rebuild replaces the application
 controller with independent features, explicit navigation state, cancellable
 transitions and a shared camera/renderer. It preserves the existing content,
 geometry, five appearances, languages, sound controls, contact flow, drawings,
@@ -79,7 +80,7 @@ those last changes.
 
 ## Verification
 
-- `npm run check`: lint, production build and 26 compiled-site integration tests.
+- `npm run check`: lint, production build and 27 compiled-site integration tests.
   Covers all features, seven capture modes, 60/120 Hz motion, hidden/reduced
   motion, rapid navigation, delayed callback cancellation, contact draft/chips,
   drawing callouts, stable sheet selection and outward-transition visibility.
@@ -92,6 +93,8 @@ those last changes.
 - 33 comparisons against the baseline confirmed unchanged city geometry, all
   four sheets and annotations, BIM, territory and typology (normalizing generated
   clip IDs and projection styles). Existing DXF files remain byte-for-byte equal.
+- The user confirmed that the replacement camera eliminated the reported
+  Services-to-city flicker in the local Chrome preview.
 - Normal-motion frames were captured in Chrome at DPR 2 (109 desktop and 110
   mobile frames; the SVG camera remained unchanged during outward travel), and the reported local
   Chrome preview was inspected directly during the Services-to-city transition.

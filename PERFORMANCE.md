@@ -1,7 +1,7 @@
 # Performance rebuild
 
 The site retains Vite and native JavaScript. The shared initial JavaScript is
-54.9 KB (about 45% smaller than the 100.6 KB baseline). WebKit additionally loads
+54.7 KB (about 46% smaller than the 100.6 KB baseline). WebKit additionally loads
 an approximately 7 KB rendering helper when normal-motion travel needs it.
 This rebuild replaces the application
 controller with independent features, explicit navigation state, cancellable
@@ -110,6 +110,16 @@ those last changes.
   archive (Playwright build 2359) was subsequently obtained. Browser checks use
   that engine; it is not identical to the user's Safari 27 or a physical iPhone.
   Audible output and live FTP hosting were not validated by the automated suite.
+- WebKit's desktop/mobile interaction suite passes, including checks that hover
+  highlights start no cache jobs, Work's zoom proceeds directly toward the map,
+  city geometry stays opaque during that journey, and a detail crop is present.
+  It also covers cached outward travel, cancellation, resize, live SVG restoration
+  and optional-cache download failure. These assertions are not FPS measurements.
+- Additional WebKit checks at DPR 2 cover actual building pointer hover and
+  desktop/mobile zoom images. Hover causes no cache rebuilds; sampled building
+  zoom detail retains at least 1.5 bitmap pixels per CSS pixel. Intermediate
+  images show the city remaining visible during Work entry, and the map is
+  present at arrival. These visual checks do not measure native Safari frame rate.
 
 ## Safari rendering
 

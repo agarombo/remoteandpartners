@@ -10,8 +10,7 @@ import {
 } from "./dom.js";
 
 export function createScene(state) {
-  const svg = byId("stage"),
-    gShips = byId("ships");
+  const svg = byId("stage");
   (function materials() {
     const defs = svg.querySelector("defs");
     const NS2 = "http://www.w3.org/2000/svg";
@@ -124,32 +123,6 @@ export function createScene(state) {
     gOrb.appendChild(d);
     return { el: d, t: (i * Math.PI * 2) / 5 };
   });
-
-  /* aeronaves: el isotipo de la marca derivando por el cielo.
-   Los trazos se leen del propio logotipo del HUD, así hay una sola fuente. */
-  const LOGO_D = [].slice
-    .call(document.querySelectorAll(".brand .mark path"))
-    .map((p) => p.getAttribute("d"));
-  const LOGO_W = 2342.2; /* ancho del isotipo ya volteado */
-
-  function flyer(w, op) {
-    const S = w / LOGO_W;
-    const g = el("g", { opacity: op });
-    g.innerHTML =
-      '<g transform="scale(' +
-      S.toFixed(5) +
-      ')"><g transform="translate(-1500,-1350)">' +
-      '<g transform="matrix(1 0 0 -1 0 3000)" fill="url(#skyGrad)">' +
-      LOGO_D.map((d) => '<path d="' + d + '"/>').join("") +
-      "</g></g></g>";
-    gShips.appendChild(g);
-    return g;
-  }
-  const SHIPS = [
-    { g: flyer(124, 0.88), x: -1500, y: -680, v: 0.34 },
-    { g: flyer(94, 0.62), x: 900, y: 560, v: -0.22 },
-    { g: flyer(74, 0.45), x: -400, y: 820, v: 0.28 },
-  ];
 
   const islands = byId("islands"),
     connections = byId("links"),
@@ -357,26 +330,6 @@ export function createScene(state) {
         const angle = s.t + (state.reduced ? 0 : t * 0.06);
         setAttribute(s.el, "cx", (Math.cos(angle) * ORX).toFixed(1));
         setAttribute(s.el, "cy", (Math.sin(angle) * ORY + 40).toFixed(1));
-      });
-      SHIPS.forEach((ship, i) => {
-        if (animate) {
-          ship.x += (ship.v * Math.min(elapsedMotion, 100)) / (1000 / 60);
-          if (ship.x > 1900) ship.x = -1900;
-          if (ship.x < -1900) ship.x = 1900;
-        }
-        setAttribute(
-          ship.g,
-          "transform",
-          "translate(" +
-            ship.x.toFixed(1) +
-            "," +
-            (ship.y + (state.reduced ? 0 : Math.sin(t * 0.4 + i) * 14)).toFixed(
-              1,
-            ) +
-            ") rotate(" +
-            (state.reduced ? 0 : Math.sin(t * 0.3 + i) * 3).toFixed(2) +
-            ")",
-        );
       });
       elapsedMotion = 0;
       initialized = true;

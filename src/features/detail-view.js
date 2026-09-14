@@ -223,7 +223,7 @@ export function detailHTML(kind) {
     (auto ? u("active") : u("coordinated")) +
     "</dd></div>" +
     "</dl>" +
-    '<button class="lab-btn" id="detClose" type="button">✕ ' +
+    '<button class="lab-btn" id="detClose" type="button">' +
     u("labBack") +
     "</button>"
   );

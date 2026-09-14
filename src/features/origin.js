@@ -42,7 +42,7 @@ export function createFeature(app) {
   }
   function render() {
     panel.style.setProperty("--accent", "var(--magenta-3)");
-    panel.innerHTML = originHTML(step, isles.length);
+    app.renderPanel(originHTML(step, isles.length));
     stats();
     show(panel, true);
     byId("ro").textContent = u("oSector")[step];
@@ -90,6 +90,7 @@ export function createFeature(app) {
       connect();
     }
     render();
+    panel.scrollTop = 0;
     app.sound.tick();
   }
   return {

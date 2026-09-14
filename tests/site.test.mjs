@@ -232,20 +232,89 @@ test("a settled territory camera responds to viewport changes", async (t) => {
   assert.notEqual(s.find("#world").getAttribute("transform"), before);
 });
 
-test("decorative flight speed is independent of display refresh rate", async (t) => {
-  const a = await setup(t),
-    b = await setup(t);
-  await a.advance(2000, 60);
-  await b.advance(2000, 120);
-  const x = (s) =>
-    Number(
-      s
-        .find("#ships > g")
-        .getAttribute("transform")
-        .match(/translate\(([^,]+)/)[1],
-    );
-  // The final ambient sample can differ by one 30 Hz frame (under 1 unit).
-  assert.ok(Math.abs(x(a) - x(b)) < 1);
+test("mobile panel handle follows back navigation and preserves contact drafts", async (t) => {
+  const s = await setup(t, { width: 390, reduced: true });
+  await s.click("#nav .c-purple");
+  assert.equal(s.find(".panel-handle").getAttribute("aria-label"), "Close panel");
+  await s.click(".panel-handle");
+  assert.equal(s.document.body.dataset.view, "city");
+  assert.equal(s.find("#panel").getAttribute("aria-hidden"), "true");
+  await s.click("#nav .c-orange");
+  s.find("#panel").scrollTop = 140;
+  await s.click('#panel [data-p="0"]');
+  assert.equal(s.find("#panel").scrollTop, 0);
+  await s.click(".panel-handle");
+  assert.equal(s.document.body.dataset.view, "network");
+  assert.ok(!s.find("#panel").classList.contains("person"));
+  await s.click(".panel-handle");
+  await s.click("#connect");
+  await s.advance(4000);
+  s.find("#fName").value = "Saved after dismissal";
+  await s.click("#langBtn");
+  assert.equal(s.find(".panel-handle").getAttribute("aria-label"), "Cerrar panel");
+  await s.click(".panel-handle");
+  await s.click("#connect");
+  await s.advance(4000);
+  assert.equal(s.find("#fName").value, "Saved after dismissal");
+});
+
+test("mobile panel swipes respect scrolling, short gestures, inputs and cancellation", async (t) => {
+  const s = await setup(t, { width: 390, reduced: true });
+  await s.click("#nav .c-purple");
+  const panel = s.find("#panel");
+  Object.defineProperty(panel, "offsetHeight", { value: 480 });
+  function touch(type, x, y, selector = "#panel h2") {
+    const event = new s.window.Event(type, { bubbles: true, cancelable: true });
+    event.touches = type === "touchend" ? [] : [{ clientX: x, clientY: y }];
+    s.find(selector).dispatchEvent(event);
+    return event;
+  }
+  touch("touchstart", 100, 500);
+  touch("touchmove", 100, 520);
+  assert.equal(panel.style.getPropertyValue("--panel-drag-y"), "20px");
+  touch("touchend", 100, 520);
+  assert.ok(panel.classList.contains("open"));
+  assert.equal(panel.style.getPropertyValue("--panel-drag-y"), "");
+
+  panel.scrollTop = 40;
+  touch("touchstart", 100, 500);
+  assert.equal(touch("touchmove", 100, 640).defaultPrevented, false);
+  touch("touchend", 100, 640);
+  assert.ok(panel.classList.contains("open"));
+  panel.scrollTop = 0;
+  touch("touchstart", 100, 500, ".panel-handle");
+  touch("touchmove", 200, 520, ".panel-handle");
+  touch("touchend", 200, 520, ".panel-handle");
+  s.find(".panel-handle").dispatchEvent(new s.window.MouseEvent("click", {
+    bubbles: true, cancelable: true, detail: 1,
+  }));
+  assert.ok(panel.classList.contains("open"));
+
+  touch("touchstart", 100, 500);
+  touch("touchmove", 100, 640);
+  touch("touchcancel", 100, 640);
+  assert.ok(!panel.classList.contains("dragging"));
+  assert.ok(panel.classList.contains("open"));
+  touch("touchstart", 100, 500);
+  touch("touchmove", 100, 640);
+  await s.click("#nav .c-orange");
+  assert.equal(panel.style.getPropertyValue("--panel-drag-y"), "");
+
+  touch("touchstart", 100, 500);
+  assert.equal(touch("touchmove", 100, 640).defaultPrevented, true);
+  const release = new s.window.Event("lostpointercapture", { bubbles: true });
+  release.pointerId = 7;
+  s.find("#panel h2").dispatchEvent(release);
+  touch("touchend", 100, 640);
+  await s.advance(1);
+  assert.equal(s.document.body.dataset.view, "city");
+
+  await s.click("#connect");
+  await s.advance(4000);
+  touch("touchstart", 100, 500, "#fName");
+  assert.equal(touch("touchmove", 100, 640, "#fName").defaultPrevented, false);
+  touch("touchend", 100, 640, "#fName");
+  assert.ok(panel.classList.contains("open"));
 });
 
 test("standalone Artifact still runs with embedded fonts and portraits", async (t) => {
@@ -286,6 +355,33 @@ test("switching viewers cancels obsolete automatic transitions", async (t) => {
   await s.advance(2500);
   assert.match(s.find("#panel").textContent, /AutoCAD/);
   assert.ok(!s.find("#panel").classList.contains("person"));
+});
+
+test("territory returns directly to the city without overshooting its scale", async (t) => {
+  const s = await setup(t, { width: 390 });
+  const scale = () =>
+    +s.find("#world").getAttribute("transform").match(/scale\(([^)]+)/)[1] *
+    +(s.find("#cameraLayer").style.transform.match(/scale\(([^)]+)/)?.[1] || 1);
+  const home = scale();
+  await s.click("#nav .c-blue");
+  await s.advance(6000);
+  const from = scale();
+  await s.click("#panel .back");
+  assert.equal(s.document.body.dataset.view, "city");
+  let previous = from;
+  const direction = Math.sign(home - from);
+  for (let i = 0; i < 45; i++) {
+    await s.advance(100);
+    const current = scale();
+    assert.ok(current >= Math.min(home, from) - 0.001);
+    assert.ok(current <= Math.max(home, from) + 0.001);
+    assert.ok((current - previous) * direction >= -0.001);
+    if (!s.document.documentElement.classList.contains("still"))
+      assert.ok(s.document.body.classList.contains("mapmode"));
+    previous = current;
+  }
+  assert.ok(Math.abs(scale() - home) < 0.001);
+  assert.ok(!s.document.body.classList.contains("mapmode"));
 });
 
 test("the latest navigation wins during the return from territory", async (t) => {

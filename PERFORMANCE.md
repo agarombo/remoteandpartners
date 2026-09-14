@@ -1,7 +1,7 @@
 # Performance rebuild
 
 The site retains Vite and native JavaScript. The shared initial JavaScript is
-54.7 KB (about 46% smaller than the 100.6 KB baseline). WebKit additionally loads
+56.4 KB (about 44% smaller than the 100.6 KB baseline). WebKit additionally loads
 an approximately 7 KB rendering helper when normal-motion travel needs it.
 This rebuild replaces the application
 controller with independent features, explicit navigation state, cancellable
@@ -88,8 +88,8 @@ those last changes.
 
 ## Verification
 
-- `npm run check`: lint, production build and 27 compiled-site integration tests.
-  Covers all features, seven capture modes, 60/120 Hz motion, hidden/reduced
+- `npm run check`: lint, production build and 28 compiled-site integration tests.
+  Covers all features, seven capture modes, mobile panel dismissal, hidden/reduced
   motion, rapid navigation, delayed callback cancellation, contact draft/chips,
   drawing callouts, stable sheet selection and outward-transition visibility.
 - `npm run test:browser`: actual Chrome tests at desktop and mobile sizes, all
@@ -139,11 +139,38 @@ and reduced-motion changes discard obsolete work; a failed optional cache falls
 back to the existing live camera.
 
 Safari keeps decorative haze in the static background and pauses ambient island,
-aircraft, walker and beacon motion. Distant-island blur is disabled in its city
+walker and beacon motion. Distant-island blur is disabled in its city
 overview. Chrome retains its established camera and decorative motion. Cached
 rendering still has preparation and SVG handoff costs: functional checks alone
 do not establish smoothness on every device, and user-reported Safari problems
 must be checked in normal motion and at high DPR.
+
+## Mobile panel and decoration cleanup — 2026-09-14
+
+Version: changes following `bb88d91`, production entry `index-hPdXtwkK.js`
+(56,358 bytes), stylesheet `index-BGg7uRNS.css`. Built with Node 26.0.0 and
+Vite 8.3.0. `npm run artifact` regenerated the standalone `ciudad.html`.
+
+The decorative flying brand copies, their construction and animation, SVG
+container/gradient, unused theme tokens/selectors and obsolete flight test were
+removed. The static upper-left brand and its appearance tokens remain intact.
+Island/satellite motion, camera travel, functional geometry and lazy features
+retain their existing behavior.
+
+At widths up to 820 CSS pixels the panel grip is a 44-pixel-high button with
+English/Spanish accessible labels. Tapping it or dragging downward follows the
+current panel's Back action, including returning from a person to the network.
+The grip stays reachable while scrolling. Content swipes start only at scroll
+position zero and outside interactive controls. Short/cancelled gestures snap
+back; content changes, navigation, resize and reduced-motion changes reset a
+drag. Contact drafts remain preserved. Only the panel transform changes during
+dragging, with its bounds read once at gesture start; this adds no scene capture
+or animation scheduler. Mobile profile portraits are 120×160 CSS pixels;
+Agustín's About Us image is 160×90, with the original crops and desktop sizing.
+
+`npm run check` passed all 28 integration tests, including short/horizontal
+gestures, scrolling, form-field exclusions, pointer-capture release before
+touchend, cancellation, translated handles, Back behavior and draft retention.
 
 The local QA workflow does not publish. The existing FTP workflow builds and
 uploads `dist/` on a push to `main`, which requires explicit permission for that push.

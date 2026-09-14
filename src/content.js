@@ -270,7 +270,6 @@ const UI = {
     usTitle: "Estados Unidos",
     territory: "TERRITORIO",
     typology: "TIPOLOGÍA",
-    returning: "REGRESANDO A",
     returnCity: "ESC · VOLVER A CIUDAD REMOTE",
     privTitle: "EL TRABAJO ES REAL. LA INFORMACIÓN ES PRIVADA.",
     privBody:
@@ -450,7 +449,6 @@ const UI = {
     usTitle: "United States",
     territory: "TERRITORY",
     typology: "TYPOLOGY",
-    returning: "RETURNING TO",
     returnCity: "ESC · RETURN TO REMOTE CITY",
     privTitle: "THE WORK IS REAL. THE DATA IS PRIVATE.",
     privBody:

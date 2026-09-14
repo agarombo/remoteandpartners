@@ -71,10 +71,11 @@ export function createFeature(app) {
     save();
     panel.classList.add("form");
     panel.style.setProperty("--accent", "var(--coral-3)");
-    panel.innerHTML =
+    app.renderPanel(
       app.state.contact === "sent"
         ? sentHTML(id)
-        : contactHTML([...wants], href());
+        : contactHTML([...wants], href()),
+    );
     for (const key of Object.keys(draft))
       if (byId(key)) byId(key).value = draft[key];
     show(panel, true);

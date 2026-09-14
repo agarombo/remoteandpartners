@@ -9,7 +9,7 @@ export function createFeature(app) {
   let isle,
     person = null;
   const seats = () => isle.g.querySelectorAll(".seat, .seat-tag");
-  function render() {
+  function render(resetScroll = false) {
     panel.classList.remove("form");
     toggle(panel, "person", person !== null);
     const data = DISTRICTS.find((d) => d.id === isle.id);
@@ -17,7 +17,8 @@ export function createFeature(app) {
       "--accent",
       `var(--${person === null ? isle.hue : data.people[person].hue}-3)`,
     );
-    panel.innerHTML = person === null ? districtHTML(isle) : personHTML(person);
+    app.renderPanel(person === null ? districtHTML(isle) : personHTML(person));
+    if (resetScroll) panel.scrollTop = 0;
     show(panel, true);
     app.request();
   }
@@ -45,7 +46,7 @@ export function createFeature(app) {
     for (const node of seats()) toggle(node, "on", +node.dataset.i === person);
     app.sound.pick(person);
     focusPerson();
-    render();
+    render(true);
   }
   return {
     open({ view, person: requestedPerson }) {
@@ -57,7 +58,7 @@ export function createFeature(app) {
         `${dx(isle, "label")} · SECTOR ${String(isle.i + 1).padStart(2, "0")}`;
       app.camera.go(app.camera.island(isle), 1250);
       app.sound.land(isle.i);
-      render();
+      render(true);
       if (view === "network" && Number.isInteger(requestedPerson))
         select(requestedPerson);
     },
@@ -80,7 +81,7 @@ export function createFeature(app) {
           isle.g.classList.remove("mode-seat");
           for (const node of seats()) node.classList.remove("on");
           app.camera.go(app.camera.island(isle));
-          render();
+          render(true);
         }
       }
     },

@@ -3,7 +3,7 @@ import { createFrameLoop } from "./motion.js";
 import { createScene } from "./core/scene.js";
 import { createCamera } from "./core/camera.js";
 import { createSound } from "./core/sound.js";
-import { createTasks } from "./core/tasks.js";
+import { createPanel } from "./core/panel.js";
 import { byId, setText, setAttribute, toggle, show } from "./core/dom.js";
 
 // Features own their DOM and pending work. Only this router changes the view.
@@ -29,10 +29,13 @@ let loop,
 const request = () => loop?.request();
 const camera = createCamera(state, request),
   scene = createScene(state),
-  sound = createSound(),
-  transitions = createTasks();
+  sound = createSound();
 const panel = byId("panel"),
   world = byId("cameraLayer");
+const panelUI = createPanel(panel, () => {
+  const back = panel.querySelector(".back");
+  if (back && !modalOpen) active?.click(back);
+});
 const loaders = {
   services: () => import("./features/network.js"),
   network: () => import("./features/network.js"),
@@ -52,6 +55,7 @@ const app = {
   openDetail,
   status,
   setLook,
+  renderPanel: (html) => panelUI.render(html),
   stop: () => loop.stop(),
 };
 function feature(view) {
@@ -96,10 +100,12 @@ async function openDetail(kind) {
   }
 }
 function clearView() {
+  panelUI.cancel();
   active?.close();
   active = null;
   closeDetail();
   show(panel, false);
+  panel.scrollTop = 0;
   panel.classList.remove("form", "person");
   scene.select(null);
   camera.clearFit();
@@ -128,40 +134,22 @@ async function navigate(view, options = {}) {
     return;
   }
   if (ticket !== revision) return;
-  transitions.reset();
   clearView();
-  state.returning = false;
+  state.returning = leaving && view !== "territory";
+  state.view = view;
+  document.body.dataset.view = view;
+  // Keep the map in the drawing until the direct journey has actually landed,
+  // including time spent preparing WebKit's travel cache.
+  if (!state.returning) document.body.classList.remove("mapmode");
   status();
-  function activate() {
-    if (ticket !== revision) return;
-    state.returning = false;
-    state.view = view;
-    document.body.dataset.view = view;
-    document.body.classList.remove("mapmode");
-    status();
-    active = next;
-    if (next) next.open({ view, ...options });
-    else {
-      setText(byId("ro"), "— — —");
-      camera.go(camera.home(), 1100);
-      sound.back();
-    }
-    request();
-  }
-  if (leaving && view !== "territory") {
-    state.view = "city";
-    state.returning = true;
-    document.body.dataset.view = "travel";
-    status(u("returning"), "REMOTE CITY");
-    camera.go({ k: 0.14, x: 0, y: 2600 * 0.55 }, 1400);
+  active = next;
+  if (next) next.open({ view, ...options });
+  else {
+    setText(byId("ro"), "— — —");
+    camera.go(camera.home(), state.returning ? 1400 : 1100);
     sound.back();
-    transitions.after(1500, () => {
-      document.body.classList.remove("mapmode");
-      camera.go({ k: 0.2, x: 0, y: 0 }, 1300);
-    });
-    transitions.after(2800, () => camera.go(camera.home(), 1300));
-    transitions.after(2900, activate);
-  } else activate();
+  }
+  request();
   return next;
 }
 function setLook(look) {
@@ -313,18 +301,24 @@ document.addEventListener("pointerout", (event) => {
   request();
 });
 addEventListener("resize", () => {
+  panelUI.cancel();
   camera.clearFit();
   camera.resize();
-  if (state.view === "city" && !state.returning) camera.go(camera.home(), 450);
+  if (state.view === "city") camera.go(camera.home(), 450);
   else active?.resize?.();
   request();
 });
 preference.addEventListener("change", (event) => {
+  panelUI.cancel();
   state.reduced = event.matches;
   request();
 });
 loop = createFrameLoop((now, elapsed) => {
   const matrix = camera.render(now, elapsed);
+  if (state.returning && !matrix.moving) {
+    state.returning = false;
+    document.body.classList.remove("mapmode");
+  }
   const drift =
     camera.animateOverview &&
     state.view === "city" &&

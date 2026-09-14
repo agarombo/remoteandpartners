@@ -33,7 +33,7 @@ export function createFeature(app) {
   function render(duration) {
     if (!app.state.arrived) return;
     panel.style.setProperty("--accent", "var(--blue-3)");
-    panel.innerHTML = territoryHTML(state);
+    app.renderPanel(territoryHTML(state));
     show(panel, true);
     fit(duration);
     app.request();

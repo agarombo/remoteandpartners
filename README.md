@@ -32,7 +32,7 @@ Para las pruebas de interacción de escritorio y móvil en Chrome instalado:
 npm run test:browser
 ```
 
-El script sirve `dist/` temporalmente en `127.0.0.1:4182`, prueba los controles
+El script sirve `dist/` temporalmente en un puerto libre de `127.0.0.1`, prueba los controles
 y guarda capturas/informes locales en `browser-results/` (fuera de Git).
 No envía el formulario ni publica archivos. Admite `--webkit` si se instaló
 esa versión de Playwright con `npx playwright install webkit`.

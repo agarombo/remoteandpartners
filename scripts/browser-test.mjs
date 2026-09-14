@@ -11,6 +11,42 @@ const executablePath =
   executableIndex < 0 ? undefined : process.argv[executableIndex + 1];
 const output = resolve("browser-results", engine);
 await mkdir(output, { recursive: true });
+
+async function swipePanel(page, motion) {
+  const target = engine === "chrome" ? "#panel h2" : ".panel-handle";
+  const box = await page.locator(target).boundingBox();
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  const session = engine === "chrome" ? await page.context().newCDPSession(page) : null;
+  if (session) {
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchStart", touchPoints: [{ x, y }],
+    });
+  } else {
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+  }
+  try {
+    for (let distance = 14; distance <= 140; distance += 14) {
+      if (session) {
+        await session.send("Input.dispatchTouchEvent", {
+          type: "touchMove", touchPoints: [{ x, y: y + distance }],
+        });
+      } else await page.mouse.move(x, y + distance);
+      await page.waitForTimeout(20);
+      if (distance === 70) {
+        assert.ok(await page.locator("#panel").evaluate((panel) =>
+          parseFloat(panel.style.getPropertyValue("--panel-drag-y")) >= 70));
+        await page.screenshot({ path: resolve(output, `mobile-panel-drag-${motion}.png`) });
+      }
+    }
+  } finally {
+    if (session) {
+      await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await session.detach();
+    } else await page.mouse.up();
+  }
+}
+
 const root = resolve("dist");
 const types = {
   ".html": "text/html",
@@ -43,7 +79,8 @@ const server = createServer(async (req, res) => {
     res.writeHead(404).end();
   }
 });
-await new Promise((resolve) => server.listen(4182, "127.0.0.1", resolve));
+await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+const siteURL = `http://127.0.0.1:${server.address().port}/`;
 let browser;
 const report = [];
 try {
@@ -60,6 +97,7 @@ try {
       viewport: { width, height },
       isMobile: name === "mobile",
       hasTouch: name === "mobile",
+      deviceScaleFactor: 2,
       reducedMotion: "reduce",
     });
     const page = await context.newPage(),
@@ -69,7 +107,7 @@ try {
       if (response.status() >= 400)
         errors.push(response.status() + " " + response.url());
     });
-    await page.goto("http://127.0.0.1:4182/");
+    await page.goto(siteURL);
     await page.locator("#nav button").first().waitFor();
     const initial = await page.evaluate(() =>
       performance
@@ -86,6 +124,24 @@ try {
       "Only the city entry should load initially",
     );
     await page.screenshot({ path: resolve(output, name + "-city.png") });
+    assert.equal(await page.locator(".brand .mark").isVisible(), true);
+    if (name === "mobile") {
+      for (const motion of ["reduce", "no-preference"]) {
+        await page.emulateMedia({ reducedMotion: motion });
+        await page.locator("#nav .c-purple").click();
+        await page.locator(".panel-handle").tap();
+        await page.waitForFunction(() =>
+          document.body.dataset.view === "city" &&
+          document.getElementById("panel").getAttribute("aria-hidden") === "true");
+        await page.locator("#nav .c-purple").click();
+        await page.locator(".panel-handle").hover();
+        await swipePanel(page, motion);
+        await page.waitForFunction(() =>
+          document.body.dataset.view === "city" &&
+          document.getElementById("panel").getAttribute("aria-hidden") === "true");
+      }
+      await page.emulateMedia({ reducedMotion: "reduce" });
+    }
     for (const look of ["maqueta", "light", "soft", "dark", "bw"]) {
       // Existing appearance values are read from the buttons below.
       const button = page.locator('#looks [data-look="' + look + '"]');
@@ -94,6 +150,8 @@ try {
     await page.locator('#looks [data-look="light"]').click();
     await page.locator("#nav .c-purple").click();
     await page.locator('#panel.open [data-lab="autocad"]').waitFor();
+    if (name === "desktop")
+      assert.equal(await page.locator(".panel-handle").isVisible(), false);
     await page.screenshot({ path: resolve(output, name + "-services.png") });
     await page.locator('#panel [data-lab="autocad"]').click();
     await page.locator(".isl.focus.flat").waitFor();
@@ -158,6 +216,13 @@ try {
     );
     await page.locator('#panel .net [data-p="0"]').click();
     await page.locator("#panel.person .portrait").waitFor();
+    if (name === "mobile") {
+      const portrait = await page.locator(".portrait").boundingBox();
+      assert.ok(portrait.width <= 120 && portrait.height <= 160);
+      const handle = await page.locator(".panel-handle").boundingBox();
+      assert.ok(portrait.y >= handle.y + handle.height, "The portrait starts below the grip");
+      await page.screenshot({ path: resolve(output, "mobile-profile.png") });
+    }
     await page.keyboard.press("ArrowRight");
     assert.match(await page.locator("#panel").textContent(), /Tomás/);
     await page.locator("#langBtn").focus();
@@ -172,6 +237,10 @@ try {
     await page.locator("#oNext").waitFor();
     for (let i = 0; i < 4; i++) await page.locator("#oNext").click();
     await page.locator("#oGo").waitFor();
+    if (name === "mobile") {
+      const portrait = await page.locator(".human img").boundingBox();
+      assert.ok(portrait.width <= 160 && portrait.height <= 90);
+    }
     await page.screenshot({ path: resolve(output, name + "-origin.png") });
     await page.keyboard.press("Escape");
     await page.locator("#nav .c-blue").click();
@@ -221,6 +290,8 @@ try {
           function tick(now) {
             frames.push({
               ms: now - start,
+              moving: !document.documentElement.classList.contains("still"),
+              raster: document.getElementById("cameraLayer").dataset.raster || null,
               svg: document.getElementById("world").getAttribute("transform"),
               css: (
                 document.querySelector(".raster-layer") ||
@@ -235,15 +306,20 @@ try {
                 (node) => node.style.visibility === "hidden",
               ).length,
             });
-            if (now - start < 1200) requestAnimationFrame(tick);
+            const last = frames.at(-1);
+            if (now - start < 10000 && (last.moving || last.raster))
+              requestAnimationFrame(tick);
             else resolve(frames);
           }
           requestAnimationFrame(tick);
         }),
     );
     const traveling = cameraFrames.filter(
-      (frame) => frame.ms > 30 && frame.ms < 950,
+      (frame) => frame.ms > 30 && frame.moving && frame.raster !== "preparing",
     );
+    assert.ok(!cameraFrames.at(-1).moving && !cameraFrames.at(-1).raster,
+      "The outward journey settles and restores the live SVG");
+    await writeFile(resolve(output, `${name}-outward-frames.json`), JSON.stringify(cameraFrames));
     assert.ok(traveling.length > 5);
     assert.equal(
       new Set(traveling.map((frame) => frame.svg)).size,
@@ -373,6 +449,62 @@ try {
       );
       await page.setViewportSize({ width, height });
     }
+    // The map returns in one journey, without shrinking past the city and
+    // zooming in again. Sample preparation as well as the actual movement.
+    await page.locator('#nav [data-island="work"]').click();
+    await page.locator('#panel [data-m="territory"]').click();
+    await page.waitForFunction(() =>
+      document.body.dataset.view === "territory" &&
+      document.documentElement.classList.contains("still") &&
+      !document.getElementById("cameraLayer").dataset.raster);
+    const returnJourney = page.evaluate(() => new Promise((resolve) => {
+      const frames = [], start = performance.now();
+      function sample() {
+        const camera = document.getElementById("cameraLayer");
+        const raster = document.querySelector(".raster-layer");
+        const world = document.getElementById("world");
+        const base = +world.getAttribute("transform").match(/scale\(([^)]+)/)[1];
+        const relative = new DOMMatrix((raster || camera).style.transform).a;
+        return {
+          ms: performance.now() - start,
+          scale: relative * base * (raster ? +raster.dataset.pixelScale * base : 1),
+          moving: !document.documentElement.classList.contains("still"),
+          raster: camera.dataset.raster || null,
+          map: document.body.classList.contains("mapmode"),
+          mapOpacity: +getComputedStyle(document.getElementById("usmap")).opacity,
+        };
+      }
+      frames.push(sample());
+      document.querySelector("#panel .back").click();
+      function tick() {
+        const frame = sample();
+        frames.push(frame);
+        window.mapReturnFrame = frame;
+        if (frame.ms < 10000 && (frame.moving || frame.raster)) requestAnimationFrame(tick);
+        else resolve(frames);
+      }
+      requestAnimationFrame(tick);
+    }));
+    await page.waitForFunction(() => window.mapReturnFrame?.moving &&
+      window.mapReturnFrame.raster !== "preparing");
+    await page.waitForTimeout(550);
+    await page.screenshot({ path: resolve(output, `${name}-map-return-moving.png`) });
+    const returnFrames = await returnJourney;
+    const firstScale = returnFrames[0].scale, last = returnFrames.at(-1);
+    const direction = Math.sign(last.scale - firstScale);
+    assert.ok(!last.moving && !last.raster && !last.map);
+    assert.ok(returnFrames.filter((frame) => frame.moving && frame.raster !== "preparing").length > 5);
+    for (let i = 1; i < returnFrames.length; i++) {
+      const frame = returnFrames[i];
+      assert.ok(frame.scale >= Math.min(firstScale, last.scale) - 0.001);
+      assert.ok(frame.scale <= Math.max(firstScale, last.scale) + 0.001);
+      assert.ok((frame.scale - returnFrames[i - 1].scale) * direction >= -0.001,
+        "The return never reverses zoom direction");
+      if (frame.moving) assert.ok(frame.map && frame.mapOpacity === 1,
+        "The map remains visible until the return has landed");
+    }
+    await writeFile(resolve(output, `${name}-map-return-frames.json`), JSON.stringify(returnFrames));
+    await page.screenshot({ path: resolve(output, `${name}-map-return-city.png`) });
     await page.emulateMedia({ reducedMotion: "reduce" });
     // Responsive reflow and keyboard access at narrow/wide sizes.
     for (const viewport of [
@@ -391,16 +523,22 @@ try {
     assert.deepEqual(errors, []);
     report.push({
       name,
+      browserVersion: browser.version(),
+      viewport: { width, height },
+      deviceScaleFactor: 2,
+      panelGesture: name === "mobile"
+        ? engine === "chrome" ? "native touch swipe and tap" : "pointer drag and touch tap"
+        : "desktop handle hidden",
       initialJavaScript: initial,
       checks:
-        "city, appearances, sheets, details, BIM, network, language, origin, territory, typology, contact draft, outward animation, responsive overflow",
+        "city, appearances, sheets, details, BIM, network, language, origin, territory, typology, contact draft, outward animation, direct map return, mobile panel dismissal, responsive overflow",
       errors,
     });
     await context.close();
   }
   // A failed on-demand download leaves the current screen usable; refresh recovers.
   const page = await browser.newPage({ reducedMotion: "reduce" });
-  await page.goto("http://127.0.0.1:4182/");
+  await page.goto(siteURL);
   await page.route("**/network-*.js", (route) => route.abort());
   await page.locator("#nav .c-purple").click();
   await page.locator("#mapStatus.on").waitFor();
@@ -412,7 +550,7 @@ try {
   if (engine === "webkit") {
     const fallback = await browser.newPage();
     await fallback.route("**/raster-*.js", (route) => route.abort());
-    await fallback.goto("http://127.0.0.1:4182/");
+    await fallback.goto(siteURL);
     await fallback.locator("#nav .c-purple").click();
     await fallback.locator('#panel.open [data-lab="autocad"]').waitFor();
     await fallback.waitForFunction(() =>

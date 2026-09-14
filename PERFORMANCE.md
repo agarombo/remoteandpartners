@@ -1,7 +1,7 @@
 # Performance rebuild
 
 The site retains Vite and native JavaScript. The shared initial JavaScript is
-56.4 KB (about 44% smaller than the 100.6 KB baseline). WebKit additionally loads
+56.1 KB (about 44% smaller than the 100.6 KB baseline). WebKit additionally loads
 an approximately 7 KB rendering helper when normal-motion travel needs it.
 This rebuild replaces the application
 controller with independent features, explicit navigation state, cancellable
@@ -88,7 +88,7 @@ those last changes.
 
 ## Verification
 
-- `npm run check`: lint, production build and 28 compiled-site integration tests.
+- `npm run check`: lint, production build and 29 compiled-site integration tests.
   Covers all features, seven capture modes, mobile panel dismissal, hidden/reduced
   motion, rapid navigation, delayed callback cancellation, contact draft/chips,
   drawing callouts, stable sheet selection and outward-transition visibility.
@@ -145,16 +145,17 @@ rendering still has preparation and SVG handoff costs: functional checks alone
 do not establish smoothness on every device, and user-reported Safari problems
 must be checked in normal motion and at high DPR.
 
-## Mobile panel and decoration cleanup — 2026-09-14
+## Mobile controls and direct map return — 2026-09-14
 
-Version: changes following `bb88d91`, production entry `index-hPdXtwkK.js`
-(56,358 bytes), stylesheet `index-BGg7uRNS.css`. Built with Node 26.0.0 and
-Vite 8.3.0. `npm run artifact` regenerated the standalone `ciudad.html`.
+Version: the combined source at `c023610`, production entry `index-984HGiRt.js`,
+stylesheet `index-DAM0c_6q.css`. Built with Node 26.0.0 and Vite 8.3.0 in an
+isolated copy to keep concurrent local edits out of running checks.
+`npm run artifact` regenerated the standalone `ciudad.html` from this source.
 
 The decorative flying brand copies, their construction and animation, SVG
 container/gradient, unused theme tokens/selectors and obsolete flight test were
 removed. The static upper-left brand and its appearance tokens remain intact.
-Island/satellite motion, camera travel, functional geometry and lazy features
+Island/satellite motion, functional geometry and lazy features
 retain their existing behavior.
 
 At widths up to 820 CSS pixels the panel grip is a 44-pixel-high button with
@@ -165,12 +166,57 @@ position zero and outside interactive controls. Short/cancelled gestures snap
 back; content changes, navigation, resize and reduced-motion changes reset a
 drag. Contact drafts remain preserved. Only the panel transform changes during
 dragging, with its bounds read once at gesture start; this adds no scene capture
-or animation scheduler. Mobile profile portraits are 120×160 CSS pixels;
-Agustín's About Us image is 160×90, with the original crops and desktop sizing.
+or animation scheduler. The combined mobile layout puts 80-pixel-wide profile
+portraits beside the name and uses a 96×72 image in About Us. New profiles start
+at the top. Detail Back buttons use the translated label's single ×.
 
-`npm run check` passed all 28 integration tests, including short/horizontal
+Closing Work now calls the city destination once, with a 1400 ms camera journey.
+The former intermediate zoom targets and timed route callbacks were removed.
+The map remains visible through cache preparation and travel, and leaves the
+scene when the camera actually settles. A new destination can interrupt the
+return immediately, and resize retargets the current home position. Chrome's
+HTML camera layer and WebKit's bounded cache/crop renderer remain unchanged.
+
+`npm run check` passed all 29 integration tests, including short/horizontal
 gestures, scrolling, form-field exclusions, pointer-capture release before
-touchend, cancellation, translated handles, Back behavior and draft retention.
+touchend, cancellation, translated handles, Back behavior, draft retention and
+a direct return that never overshoots or reverses its zoom. The VM harness
+models native modulepreload support because its linker already loads the graph;
+removing the route timers lets their helper become a deferred shared chunk.
 
 The local QA workflow does not publish. The existing FTP workflow builds and
 uploads `dist/` on a push to `main`, which requires explicit permission for that push.
+
+## Responsive panel sizing — 2026-09-14
+
+Layout validation uses the fixed build from `c023610`: `index-984HGiRt.js` and
+`index-DAM0c_6q.css` (source CSS SHA-256 prefix `cd610f3320761c12`). The responsive
+rules use smaller headings, 15px reading text, compact profile/photo grids,
+wrapping metadata, opaque surfaces and safe-area padding. Form inputs use 16px
+text and at least 44px height; panel action buttons and service chips also have
+44px minimum heights. Drawing/BIM controls use explicit rows, with metadata
+beside the title in landscape. New destinations, About Us chapters and Work
+mode changes reset the reading position. The detail panel sits above the
+drawing toolbar so its Back button can be tapped.
+
+Chrome 153.0.8010.37 and Playwright WebKit 26.6 (build 2359) each passed a separate
+layout audit at 320×568, 375×667, 390×844, 430×932, 768×1024, 812×375, 932×430 and
+1440×900. DPR was 3 for 390/430 widths and 2 otherwise, with touch/mobile
+emulation below 1000px and reduced motion. All 208 panel-state checks passed:
+no horizontal overflow; Services, all four drawing sheets, detail dismissal,
+BIM controls, network profiles, English/Spanish content, About Us, Work modes,
+contact fields and draft retention remained usable. Selected screenshots at
+320, 390 and 812px were also reviewed for proportions, image placement and
+overlapping panels; these are visual checks, not frame-rate measurements.
+
+At 390×844 both engines measured the AutoCAD toolbar at 324.4 CSS pixels tall
+and the first profile at 573.8px. The profile photo is 80×106.7px and sits beside
+the name; the About Us image is 96×72px. Long content scrolls inside the sheet.
+Raw local screenshots and measurements are in
+`/private/tmp/remote-mobile-panels/final/matrix/`.
+
+`npm run check` passed all 29 integration tests and `npm run artifact` regenerated
+the standalone page. The final Chrome browser regression pass covered desktop
+1440×900 and mobile 390×844 at DPR 2, normal/reduced motion, panel dragging,
+navigation, resizing, drawings, BIM and form drafts. Physical phones, the native
+Safari version and the on-screen keyboard were not exercised by this emulation.

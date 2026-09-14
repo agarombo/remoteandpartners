@@ -451,6 +451,7 @@ try {
     }
     // The map returns in one journey, without shrinking past the city and
     // zooming in again. Sample preparation as well as the actual movement.
+    await page.keyboard.press("Escape");
     await page.locator('#nav [data-island="work"]').click();
     await page.locator('#panel [data-m="territory"]').click();
     await page.waitForFunction(() =>

@@ -56,7 +56,8 @@ export async function capture(app) {
   app.state.capture = true;
   document.documentElement.classList.add("shot");
   app.sound.mute();
-  app.setLook(plan.look);
+  document.documentElement.dataset.look = plan.look;
+  app.camera.invalidate();
   byId("cameraLayer").style.opacity = 1;
   if (plan.view) {
     const feature = await app.navigate(plan.view, { mode: plan.mode });

@@ -54,7 +54,6 @@ const app = {
   navigate,
   openDetail,
   status,
-  setLook,
   renderPanel: (html) => panelUI.render(html),
   stop: () => loop.stop(),
 };
@@ -151,10 +150,6 @@ async function navigate(view, options = {}) {
   }
   request();
   return next;
-}
-function setLook(look) {
-  setAttribute(document.documentElement, "data-look", look);
-  camera.invalidate();
 }
 function translate() {
   document.documentElement.lang = LANG;
@@ -327,7 +322,6 @@ show(panel, false);
 show(byId("detail"), false, "on");
 show(byId("lab"), false, "on");
 document.body.dataset.view = "city";
-setLook("light");
 translate();
 camera.go(camera.home(), 1800);
 request();

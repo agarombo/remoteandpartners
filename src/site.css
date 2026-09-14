@@ -100,8 +100,8 @@
    Colores tomados del manual de marca: magenta #ED23AD, púrpura
    #D57FFB, azul #53AAFD, coral #FF5148, naranja #E76D32,
    rosa #FBA3B4 y el navy #242E3D / #161A28 de los neutros.
-   Toda la escena SVG lee estas variables, por eso el tema
-   oscuro funciona sin tocar el generador.
+   Toda la escena SVG lee estas variables. La vista normal usa
+   la paleta clara; las capturas pueden elegir otra paleta.
    ============================================================ */
 :root{
   --sky-0:#F4F5F9; --haze:#FFFFFF; --star-op:0;
@@ -120,9 +120,11 @@
 
   --panel:rgba(255,255,255,.84); --panel-line:rgba(36,46,61,.13);
   --edge:rgba(36,46,61,.10);
+  --scen:.40;
+  --sky-hi:#FBFBFD; --sky-lo:#E9EBF1; --shd-op:.19; --edge-f:rgba(36,46,61,.14);
 }
 /* ============================================================
-   ASPECTOS — data-look selecciona el aspecto; la entrada usa light.
+   CAPTURAS — ?shot=city&look= selecciona estas paletas.
    ============================================================ */
 /* maqueta: la ciudad como modelo físico fotografiado en estudio. Fondo de
    papel cálido, PVC mate para lo neutro, tilo para lo que era gris, y los
@@ -142,22 +144,6 @@
   --pulse:#CA7D5D;
   --panel:rgba(246,241,233,.86); --panel-line:rgba(58,52,44,.14); --edge:rgba(58,52,44,.10);
   --scen:.72; --shd-op:.22; --edge-f:rgba(58,52,44,.13);
-}
-:root[data-look="light"]{
-  --sky-0:#F4F5F9; --haze:#FFFFFF; --star-op:0;
-  --ink:#242E3D; --ink-soft:#6E7688; --line:#A4ABC3; --line-op:.55;
-  --stone-1:#FFFFFF; --stone-2:#EBEDF3; --stone-3:#DADDE6; --stone-4:#A4ABC3;
-  --magenta-1:#F8A0DA; --magenta-2:#F25AC4; --magenta-3:#ED23AD; --magenta-4:#B01881;
-  --purple-1:#E6BEFD; --purple-2:#D57FFB; --purple-3:#B94FEE; --purple-4:#8E2FBD;
-  --blue-1:#A9D2FE; --blue-2:#7ABDFE; --blue-3:#53AAFD; --blue-4:#2A7FD0;
-  --orange-1:#F7B78F; --orange-2:#EF9159; --orange-3:#E76D32; --orange-4:#AF4B1B;
-  --coral-1:#FFACA5; --coral-2:#FF7D73; --coral-3:#FF5148; --coral-4:#C5322A;
-  --slate-1:#C9CEDC; --slate-2:#AAB1C4; --slate-3:#8B94AC; --slate-4:#6E7688;
-  --coral:#FF5148; --orange:#E76D32; --pink:#FBA3B4;
-  --mark-a:#ED23AD; --mark-b:#E76D32;
-  --panel:rgba(255,255,255,.84); --panel-line:rgba(36,46,61,.13); --edge:rgba(36,46,61,.10);
-  --scen:.40;
-  --sky-hi:#FBFBFD; --sky-lo:#E9EBF1; --shd-op:.19; --edge-f:rgba(36,46,61,.14);
 }
 /* apagado: fondo blanco y la marca casi en gris; el color queda para lo activo */
 :root[data-look="soft"]{

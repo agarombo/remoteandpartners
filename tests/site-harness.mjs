@@ -26,6 +26,12 @@ export async function loadSite({
     virtualConsole,
   });
   const { window } = dom;
+  // The VM linker loads the compiled module graph directly. Model native
+  // modulepreload support so Vite does not try to fetch those chunks in JSDOM.
+  const supports = window.DOMTokenList.prototype.supports;
+  window.DOMTokenList.prototype.supports = function (token) {
+    return token === "modulepreload" || supports.call(this, token);
+  };
   let now = 0,
     nextId = 1,
     hidden = false;

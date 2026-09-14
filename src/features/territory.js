@@ -49,6 +49,7 @@ export function createFeature(app) {
       node.classList.remove("sel");
     app.sound.tick();
     render();
+    panel.scrollTop = 0;
   }
   return {
     open() {

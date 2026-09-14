@@ -154,8 +154,6 @@ async function navigate(view, options = {}) {
 }
 function setLook(look) {
   setAttribute(document.documentElement, "data-look", look);
-  for (const button of byId("looks").querySelectorAll("button"))
-    setAttribute(button, "aria-current", button.dataset.look === look);
   camera.invalidate();
 }
 function translate() {
@@ -172,9 +170,6 @@ function translate() {
     byId("langBtn"),
     "aria-label",
     LANG === "es" ? "Switch to English" : "Cambiar a español",
-  );
-  [...byId("looks").querySelectorAll("button")].forEach((button, i) =>
-    setText(button, u("looks")[i]),
   );
   scene.translate();
   active?.render();
@@ -203,12 +198,6 @@ function action(event) {
   }
   if (target.closest("#sndBtn")) {
     sound.toggle();
-    return;
-  }
-  const look = target.closest("[data-look]");
-  if (look?.matches("button")) {
-    setLook(look.dataset.look);
-    sound.tick();
     return;
   }
   if (target.closest("#connect")) {

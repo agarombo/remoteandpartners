@@ -542,12 +542,6 @@ body.originmode.wiremode #links .link.built{
 .ticks i:nth-child(4){ bottom:0; right:0; border-left:0; border-top:0; }
 .hintbar{ display:flex; flex-direction:column; align-items:flex-end; gap:9px; pointer-events:auto; }
 .tools{ display:flex; gap:20px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
-.looks{ display:flex; gap:12px; }
-.looks button{ appearance:none; background:none; border:0; padding:0; cursor:pointer;
-      font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.2em;
-      color:var(--ink-soft); opacity:.6; transition:opacity .25s, color .25s; }
-.looks button:hover, .looks button:focus-visible{ opacity:1; outline:none; }
-.looks button[aria-current="true"]{ color:var(--ink); opacity:1; }
 .snd b{ font-weight:500; color:var(--ink); }
 .snd.en b{ font-weight:400; color:var(--ink-soft); }
 .snd.en span:first-of-type{ color:var(--ink); }
@@ -864,15 +858,13 @@ body.originmode.wiremode #links .link.built{
   .readout{ gap:0; }
   .hintbar{ align-items:stretch; gap:0; }
   .tools{ width:100%; justify-content:space-between; gap:10px; flex-wrap:nowrap; }
-  .looks{ gap:9px; }
-  .looks button, .snd{ font-size:9.5px; letter-spacing:.12em; }
+  .snd{ font-size:9.5px; letter-spacing:.12em; }
   .snd{ white-space:nowrap; }
   .ticks{ display:none; }
 }
 /* pantallas muy angostas: el índice manda, las preferencias se achican */
 @media (max-width:400px){
-  .looks button, .snd{ font-size:9px; letter-spacing:.08em; }
-  .looks{ gap:7px; }
+  .snd{ font-size:9px; letter-spacing:.08em; }
   .tools{ gap:7px; }
   .connect{ padding:7px 11px; }
   .connect .cshort{ font-size:9.5px; letter-spacing:.14em; }

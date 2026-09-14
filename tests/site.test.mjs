@@ -30,15 +30,16 @@ test("production entry has local assets, metadata, and all existing downloads", 
   }
 });
 
-test("city keeps four destinations, appearance, language and sound controls", async (t) => {
+test("city keeps four destinations with only language and sound controls", async (t) => {
   const s = await setup(t);
   assert.equal(s.document.querySelectorAll("#islands > .isl").length, 14);
   assert.equal(s.document.querySelectorAll("#nav button").length, 4);
   assert.equal(s.document.documentElement.lang, "en");
-  for (const button of s.document.querySelectorAll("#looks button")) {
-    await s.click('#looks [data-look="' + button.dataset.look + '"]');
-    assert.equal(s.document.documentElement.dataset.look, button.dataset.look);
-  }
+  assert.equal(s.document.documentElement.dataset.look, "light");
+  assert.deepEqual(
+    [...s.document.querySelectorAll(".tools button")].map((button) => button.id),
+    ["langBtn", "sndBtn"],
+  );
   await s.click("#langBtn");
   assert.equal(s.document.documentElement.lang, "es");
   assert.match(s.find("#nav").textContent, /SERVICIOS/);

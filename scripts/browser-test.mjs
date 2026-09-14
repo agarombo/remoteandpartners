@@ -142,12 +142,15 @@ try {
       }
       await page.emulateMedia({ reducedMotion: "reduce" });
     }
-    for (const look of ["maqueta", "light", "soft", "dark", "bw"]) {
-      // Existing appearance values are read from the buttons below.
-      const button = page.locator('#looks [data-look="' + look + '"]');
-      if (await button.count()) await button.click();
-    }
-    await page.locator('#looks [data-look="light"]').click();
+    assert.equal(await page.locator("html").getAttribute("data-look"), "light");
+    assert.deepEqual(
+      await page.locator(".tools button").evaluateAll((buttons) => buttons.map((button) => button.id)),
+      ["langBtn", "sndBtn"],
+    );
+    await page.locator("#sndBtn").click();
+    assert.equal(await page.locator("#sndBtn").getAttribute("aria-pressed"), "false");
+    await page.locator("#sndBtn").click();
+    assert.equal(await page.locator("#sndBtn").getAttribute("aria-pressed"), "true");
     await page.locator("#nav .c-purple").click();
     await page.locator('#panel.open [data-lab="autocad"]').waitFor();
     if (name === "desktop")
@@ -532,7 +535,7 @@ try {
         : "desktop handle hidden",
       initialJavaScript: initial,
       checks:
-        "city, appearances, sheets, details, BIM, network, language, origin, territory, typology, contact draft, outward animation, direct map return, mobile panel dismissal, responsive overflow",
+        "city, language and sound toolbar, sheets, details, BIM, network, origin, territory, typology, contact draft, outward animation, direct map return, mobile panel dismissal, responsive overflow",
       errors,
     });
     await context.close();

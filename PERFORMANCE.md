@@ -220,3 +220,16 @@ the standalone page. The final Chrome browser regression pass covered desktop
 1440×900 and mobile 390×844 at DPR 2, normal/reduced motion, panel dragging,
 navigation, resizing, drawings, BIM and form drafts. Physical phones, the native
 Safari version and the on-screen keyboard were not exercised by this emulation.
+
+## Node.js 26 tooling — 2026-10-03
+
+Source baseline: `d164f9b`, with only runtime configuration and documentation
+changes. `.nvmrc` selects Node 26; the FTP workflow reads that file, and
+`package.json` and the lockfile both require Node >=26.0.0.
+
+`fnm exec --using=26 npm run check` passed on macOS with Node 26.10.0,
+npm 11.19.1 and Vite 8.3.0: ESLint, the production build and all 29 integration
+tests. These tests exercise the built modules in jsdom 30.0.1; no browser
+engine, viewport/DPR, visual quality or frame-time measurements were taken.
+Application sources were unchanged, so `ciudad.html` was not regenerated.
+The GitHub workflow was not run and no deployment was performed.

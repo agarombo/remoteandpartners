@@ -5,7 +5,8 @@ recibe archivos estáticos: no necesita Node ni un servidor de aplicaciones.
 
 ## Desarrollo local
 
-Usar Node 24 (el mismo que CI), o Node 22.13+.
+Usar Node 26 (el mismo que CI, definido en `.nvmrc`). Con `fnm` o `nvm`,
+ejecutar `fnm use` o `nvm use` antes de instalar las dependencias.
 
 ```sh
 npm ci

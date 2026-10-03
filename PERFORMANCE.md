@@ -233,3 +233,43 @@ tests. These tests exercise the built modules in jsdom 30.0.1; no browser
 engine, viewport/DPR, visual quality or frame-time measurements were taken.
 Application sources were unchanged, so `ciudad.html` was not regenerated.
 The GitHub workflow was not run and no deployment was performed.
+
+## Connection rings in Chrome — 2026-10-03
+
+Source baseline: `e74fbfb`. Reported: the rings that expand from the centre
+when a connection closes looked blurry in Chrome and did not appear in Safari.
+
+Cause in Chrome: the three `.shockring` ellipses run a compositor transform
+animation from `scale(.12)` to `scale(21)`. Chrome's layer tree showed them as
+their own layers (`ActiveTransformAnimation`) both before and after the
+performance rebuild. Under `#cameraLayer`, which now has `will-change:
+transform`, Chrome rasterised them far below their final size and enlarged the
+bitmap: the rings showed blocky, smeared strokes while the grey links in the
+same frame stayed sharp. The ring now uses its final geometry (840×483) and
+animates from `scale(.005714)` to `scale(1)`, so the animation only ever shrinks
+the bitmap. Its timing, size and opacity are unchanged, and it is still a
+compositor animation, so it adds no repaint work. The `?shot=rings` scales
+are divided by 21, and WebKit's bitmap bounds now skip `#shock`, which is
+never drawn into the bitmap.
+
+Measured with real compositor frames (CDP screencast, PNG) in headed Chrome
+154.0.8037.93, macOS, 1440×900, DPR 2, normal motion. The previous build, a
+build without `will-change` on the camera layer, and the final change were
+compared at the same moment (~0.6 s after the rings start). Only the
+previous build was blurry. Frames at ~0.6 s and ~1.2 s are sharp, and the
+small ring in the first frame shows no aliasing. A static `?shot=rings` capture
+matches the previous one. Headless Chrome did not show the blur, so it is not a
+valid check for this defect.
+
+Safari is a separate cause and was not changed here. In WebKit
+(Playwright 26.6, 1440×900, DPR 2) the rings play while the camera travels over
+the cached bitmap, with `#stage` at opacity 0. None of the 8 animated ring
+frames rendered the live stage; the pre-rebuild page rendered all of them.
+
+`npm run check` (Node 26.10.0) passed lint, build and all 29 tests, and
+`npm run artifact` regenerated `ciudad.html`. `scripts/browser-test.mjs` passed
+in Chrome. In WebKit it stopped at the map-return scale assertion
+(`frame.scale <= Math.max(firstScale, last.scale)`); unmodified `e74fbfb` fails
+the same way, so that failure predates this change. The native Safari
+version, physical phones and reduced-motion frames of this animation were not
+measured.

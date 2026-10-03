@@ -73,7 +73,8 @@ export async function capture(app) {
     shock.classList.add("go", "frozen");
     [...shock.querySelectorAll(".shockring")].forEach((ring, i) => {
       ring.style.animation = "none";
-      ring.style.transform = `scale(${[9, 15, 22][i]})`;
+      // The rings are drawn at 21× their starting size; see shockOut.
+      ring.style.transform = `scale(${[9, 15, 22][i] / 21})`;
       ring.style.opacity = [0.85, 0.5, 0.24][i];
     });
   }

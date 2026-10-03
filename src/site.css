@@ -355,7 +355,10 @@ nav.dist button.c-orange i{ color:var(--orange-3); }
 
 /* pulsos y nodo del visitante */
 .pulse{ fill:var(--pulse); }
-/* el halo: tres anillos que salen del centro cuando la conexión cierra */
+/* el halo: tres anillos que salen del centro cuando la conexión cierra.
+   Se dibujan a su tamaño final y la animación sólo los reduce: bajo la capa
+   de cámara con will-change, Chrome rasteriza la animación compuesta sin
+   conocer su escala máxima y un anillo pequeño ampliado ×21 se ve borroso */
 #shock{ opacity:0; }
 #shock.go{ opacity:1; }
 .shockring{ fill:none; stroke:var(--pulse); stroke-width:1.6;
@@ -363,9 +366,10 @@ nav.dist button.c-orange i{ color:var(--orange-3); }
 #shock.go .shockring{ animation:shockOut 1.7s cubic-bezier(.12,.68,.28,1) forwards; }
 #shock.go .shockring:nth-child(2){ animation-delay:.18s; }
 #shock.go .shockring:nth-child(3){ animation-delay:.36s; }
-@keyframes shockOut{ 0%{ transform:scale(.12); opacity:.9; }
+/* .12 → 21 respecto del anillo de 40×23 de antes: .12 / 21 → 1 */
+@keyframes shockOut{ 0%{ transform:scale(.005714); opacity:.9; }
                      60%{ opacity:.35; }
-                     100%{ transform:scale(21); opacity:0; } }
+                     100%{ transform:scale(1); opacity:0; } }
 #islands.recede{ opacity:.4; transition:opacity .5s ease; }
 .link.carrying{ stroke:var(--pulse); stroke-opacity:.85; }
 #usernode{ opacity:0; pointer-events:none; transition:opacity .8s ease; }

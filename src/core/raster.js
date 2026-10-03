@@ -247,9 +247,10 @@ export function createRaster(stage, layer, request) {
         }
       }
     }
-    // Exclude hidden territory from city bounds, and vice versa.
+    // Exclude hidden territory from city bounds, and vice versa. The
+    // full-size shock rings only appear animated, never in the bitmap.
     const bounds = [...world.children]
-      .filter((node) => !node.matches(hidden + ",.hide"))
+      .filter((node) => !node.matches(hidden + ",.hide,#shock"))
       .map((node) => node.getBoundingClientRect())
       .filter((box) => box.width && box.height);
     const x0 = Math.floor(

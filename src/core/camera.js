@@ -5,6 +5,7 @@ import { byId, setAttribute, setText, toggle } from "./dom.js";
 const ease = (t) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
 export function createCamera(state, request) {
   const world = byId("world"),
+    effects = byId("effects"),
     layer = byId("cameraLayer"),
     bar = byId("scaleBar"),
     label = byId("scaleTxt");
@@ -234,6 +235,13 @@ export function createCamera(state, request) {
       if (raster?.active) raster.move(matrix, viewport);
       else layer.style.transform = transform;
     }
+    // The connection effects are a few live vectors over the city or its
+    // bitmap, so they follow the current camera directly in every engine.
+    setAttribute(
+      effects,
+      "transform",
+      `translate(${matrix.x.toFixed(2)},${matrix.y.toFixed(2)}) scale(${matrix.k.toFixed(4)})`,
+    );
     toggle(document.documentElement, "still", !moving);
     return matrix;
   }

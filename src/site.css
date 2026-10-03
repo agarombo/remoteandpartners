@@ -232,7 +232,7 @@ body{
 
 /* ---------- escena ---------- */
 #stage{ position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:manipulation; }
-.scene-background, .scene-optics, .scene-labels{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.scene-background, .scene-optics, .scene-labels, .scene-effects{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 /* Cache full-screen filters independently from the moving geometry. */
 .scene-background, .scene-optics{ transform:translateZ(0); }
 #cameraLayer{ position:absolute; inset:0; transform-origin:0 0; will-change:transform; }

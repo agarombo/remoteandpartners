@@ -55,14 +55,20 @@
       <g id="orbit"></g>
       <g id="links"></g>
       <g id="islands"></g>
-      <g id="shock"><ellipse class="shockring" cx="0" cy="0" rx="840" ry="483"/><ellipse class="shockring" cx="0" cy="0" rx="840" ry="483"/><ellipse class="shockring" cx="0" cy="0" rx="840" ry="483"/></g>
-      <g id="pulses"></g>
-      <g id="usernode"></g>
       <g id="usmap"></g>
       <g id="typo"></g>
     </g>
   </svg>
   </div>
+  <!-- la conexión va aparte de la ciudad: se anima encima de la imagen que
+       WebKit usa durante el viaje y no invalida esa imagen en cada cuadro -->
+  <svg class="scene-effects" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g id="effects">
+      <g id="shock"><ellipse class="shockring" cx="0" cy="0" rx="840" ry="483"/><ellipse class="shockring" cx="0" cy="0" rx="840" ry="483"/><ellipse class="shockring" cx="0" cy="0" rx="840" ry="483"/></g>
+      <g id="pulses"></g>
+      <g id="usernode"></g>
+    </g>
+  </svg>
   <svg class="scene-labels" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g id="tags"></g></svg>
 
   <svg class="scene-optics" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">

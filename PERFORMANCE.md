@@ -273,3 +273,46 @@ in Chrome. In WebKit it stopped at the map-return scale assertion
 the same way, so that failure predates this change. The native Safari
 version, physical phones and reduced-motion frames of this animation were not
 measured.
+
+## Connection effects in Safari — 2026-10-03
+
+Source baseline: `6605de0`. On WebKit the camera travels over a cached bitmap
+with `#stage` at opacity 0, and the connection plays during that travel. The
+pulses, shock rings and new node were therefore invisible.
+
+`#shock`, `#pulses` and `#usernode` now live in `.scene-effects`, a separate
+SVG above the stage and the bitmap layer. The camera sets its transform to the
+live camera matrix each frame in every engine. The bitmap's on-screen
+transform reduces to the same mapping, so effects and city stay aligned. The
+city layer and its bitmap are unchanged. The `#shock` exclusion from the
+previous entry was removed because `#shock` is no longer under `#world`.
+A side effect is that the pulses' per-frame position writes no longer count
+as scene changes, so they stop invalidating WebKit's bitmap cache.
+
+Playwright WebKit 26.6, 1440×900 DPR 2 (also 390×844 DPR 3), normal motion,
+six-fold slowed `performance.now`/rAF so screenshots land mid-travel: pulses run on the
+coral links, rings centre on the middle island and the node, beam, halos and
+dashed link are sharp while the bitmap moves. Headed Chrome 154.0.8037.93, CDP
+screencast: dots stay centred on the links during the composited stage travel,
+and the rings and node remain sharp.
+
+rAF intervals from the click for 5 s, 1440×900 DPR 2, three runs each,
+before → after:
+
+- Chrome headed, 120 Hz: p50 8.3 → 8.3 ms, p95 9.2–9.3 → 9.1–9.3 ms. Both
+  builds have one long frame on the first run only.
+- Playwright WebKit headless: 52–91 → 143–210 frames, p95 238–355 →
+  18–74 ms, still and uncached after 3.5–4.6 → 2.5–3.4 s. Bitmap
+  preparations per connection went from 4 to 2.
+
+The headless WebKit times are relative evidence only, not Safari frame rates.
+
+`npm run check` (Node 26.10.0) passed 29 tests and `npm run artifact`
+regenerated `ciudad.html`. `?shot=rings` matches. The Chrome browser suite
+passed. WebKit stopped at the same pre-existing map-return assertion, after
+its contact checks.
+
+Remaining difference: while WebKit is still preparing the first bitmap of the
+journey, it shows the previous one. The pulses can briefly run over grey
+links and undimmed islands until the new bitmap arrives. Native Safari,
+physical devices and reduced motion were not measured.

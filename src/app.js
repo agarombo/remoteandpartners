@@ -1,4 +1,4 @@
-import { LANG, setLanguage, u } from "./content.js";
+import { LANG, setLanguage, u, MAIL, BOOKING } from "./content.js";
 import { createFrameLoop } from "./motion.js";
 import { createScene } from "./core/scene.js";
 import { createCamera } from "./core/camera.js";
@@ -151,6 +151,80 @@ async function navigate(view, options = {}) {
   request();
   return next;
 }
+/* Presentación: la primera pantalla dice qué hacemos, para quién y cómo empezar.
+   "Recorrer la ciudad" la cierra; el logo la vuelve a abrir. */
+const introBox = byId("intro");
+const INTRO_KEY = "rp-intro-off";
+function introClosed() {
+  try {
+    return window.sessionStorage.getItem(INTRO_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function renderIntro() {
+  const call =
+    BOOKING ||
+    "mailto:" +
+      MAIL +
+      "?subject=" +
+      encodeURIComponent(LANG === "en" ? "30 min call" : "Llamada de 30 min");
+  introBox.setAttribute("aria-label", u("introLabel"));
+  introBox.innerHTML =
+    '<div class="mono intro-k">' +
+    u("introEyebrow") +
+    "</div>" +
+    "<h1>" +
+    u("introTitle") +
+    "</h1>" +
+    '<p class="intro-lead">' +
+    u("introLead") +
+    "</p>" +
+    '<ol class="intro-list">' +
+    u("introItems")
+      .map(
+        (it, i) =>
+          '<li><span class="mono">0' +
+          (i + 1) +
+          "</span><div><b>" +
+          it[0] +
+          "</b><span>" +
+          it[1] +
+          "</span></div></li>",
+      )
+      .join("") +
+    "</ol>" +
+    '<div class="intro-offer"><span class="mono">' +
+    u("introOfferK") +
+    "</span><p>" +
+    u("introOffer") +
+    "</p></div>" +
+    '<div class="intro-actions"><button class="intro-start mono" id="introStart" type="button">' +
+    u("introStart") +
+    '</button><button class="intro-go mono" id="introGo" type="button">' +
+    u("introExplore") +
+    '</button></div><a class="intro-call mono" target="_blank" rel="noopener" href="' +
+    call +
+    '">' +
+    u("introCall") +
+    "</a>" +
+    '<a class="intro-mail mono" href="mailto:' +
+    MAIL +
+    '">' +
+    MAIL +
+    "</a>";
+}
+function setIntro(open) {
+  introBox.classList.toggle("off", !open);
+  introBox.setAttribute("aria-hidden", open ? "false" : "true");
+  introBox.inert = !open;
+  try {
+    window.sessionStorage.setItem(INTRO_KEY, open ? "0" : "1");
+  } catch {
+    /* sin almacenamiento: la presentación vuelve a salir al recargar */
+  }
+}
+const introOpen = () => !introBox.classList.contains("off");
 function translate() {
   document.documentElement.lang = LANG;
   byId("roCity").innerHTML = u("city");
@@ -166,6 +240,7 @@ function translate() {
     "aria-label",
     LANG === "es" ? "Switch to English" : "Cambiar a español",
   );
+  renderIntro();
   scene.translate();
   active?.render();
   if (modalOpen) modal.render();
@@ -180,6 +255,22 @@ const routes = {
 function action(event) {
   const target = event.target;
   if (!target.closest) return;
+  if (target.closest("#introGo")) {
+    setIntro(false);
+    sound.tick();
+    return;
+  }
+  if (target.closest("#introStart")) {
+    setIntro(false);
+    navigate("contact", { want: "FREE TEST SHEET" });
+    return;
+  }
+  if (target.closest("#intro")) return;
+  if (target.closest("#brandHome")) {
+    if (state.view !== "city") navigate("city");
+    setIntro(true);
+    return;
+  }
   if (target.closest("#detClose")) {
     closeDetail();
     return;
@@ -248,6 +339,7 @@ addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     event.preventDefault();
     if (modalOpen) closeDetail();
+    else if (introOpen() && state.view === "city") setIntro(false);
     else navigate(state.view === "lab" ? "services" : "city");
   } else if (!target.closest?.('input,textarea,[contenteditable="true"]')) {
     if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
@@ -323,6 +415,7 @@ show(byId("detail"), false, "on");
 show(byId("lab"), false, "on");
 document.body.dataset.view = "city";
 translate();
+setIntro(!introClosed() && !new URLSearchParams(location.search).has("shot"));
 camera.go(camera.home(), 1800);
 request();
 if (new URLSearchParams(location.search).has("shot"))

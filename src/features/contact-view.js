@@ -1,5 +1,12 @@
 import { LANG, MAIL, BOOKING, u } from "../content.js";
-export const WANTS = ["REVIT", "AUTOCAD", "BIM", "DOCUMENTATION", "OTHER"];
+export const WANTS = [
+  "FREE TEST SHEET",
+  "AUTOCAD",
+  "REVIT",
+  "BIM",
+  "DOCUMENTATION",
+  "OTHER",
+];
 export function contactHTML(wants, href) {
   return (
     '<div class="eyebrow">' +

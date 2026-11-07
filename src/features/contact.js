@@ -106,7 +106,8 @@ export function createFeature(app) {
     });
   }
   return {
-    open() {
+    open(options = {}) {
+      if (options.want) wants.add(options.want);
       mountNode(node);
       app.state.contact = "running";
       labels();

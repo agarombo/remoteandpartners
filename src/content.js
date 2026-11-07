@@ -17,7 +17,7 @@ const PHOTOS = {
    → Compartir → copiar el enlace de la página de reservas). Mientras esté vacío,
    el botón abre un correo a MAIL. */
 const MAIL = "agustin@remoteandpartners.com";
-const BOOKING = "";
+const BOOKING = "https://calendar.app.google/tqNjNJH1k4DsQqdP7";
 
 const DISTRICTS = [
   {
@@ -204,7 +204,7 @@ const UI = {
     level: "NIVEL",
     federated: "Modelo federado",
     connect: "CONECTAR CON LA RED",
-    channel: "REMOTE CHANNEL AVAILABLE",
+    channel: "LÁMINA DE PRUEBA SIN COSTE",
     cShort: "CONECTAR",
     cShortRun: "CONECTANDO...",
     cShortGo: "CONECTAR →",
@@ -213,7 +213,7 @@ const UI = {
     nodeReady: "SECTOR 06 · NODO EXTERNO ACTIVO",
     newConn: "Conexión nueva",
     extNode: "NODO EXTERNO",
-    tellUs: "Contanos de tu proyecto.",
+    tellUs: "Contanos de tu proyecto. La primera lámina va por nuestra cuenta.",
     fName: "NOMBRE",
     fCompany: "EMPRESA / ESTUDIO",
     fEmail: "CORREO",
@@ -224,6 +224,23 @@ const UI = {
     established: "Conexión establecida",
     received: "RECIBIDO",
     call30: "¿PREFERÍS UNA LLAMADA DE 30 MIN? →",
+    introEyebrow: "DOCUMENTACIÓN DE OBRA · AUTOCAD · REVIT",
+    introTitle: "Planos de obra para constructoras y estudios de arquitectura de EE.UU.",
+    introLead:
+      "Un equipo remoto que ya entregó más de 2.500 proyectos para constructoras en 8 estados. Trabajamos dentro de tus estándares, tus plantillas y tu biblioteca de modelos.",
+    introItems: [
+      ["Sets por lote", "Planos de implantación, sets de permiso y options dibujados lote por lote, listos para presentar."],
+      ["Biblioteca de modelos", "Modelos nuevos, fachadas y options, y su actualización cuando cambian el código o las especificaciones."],
+      ["Redlines", "Comentarios de la constructora y de la revisión municipal resueltos y reenviados, con seguimiento vuelta por vuelta."],
+      ["Revit y automatización", "Modelos federados y rutinas LISP para que los planos salgan siempre iguales."],
+    ],
+    introOfferK: "LÁMINA DE PRUEBA SIN COSTE",
+    introOffer:
+      "Mandanos uno de tus planos y dibujamos una lámina gratis, para que juzgues el trabajo antes de contratarnos.",
+    introStart: "PEDIR LA LÁMINA DE PRUEBA →",
+    introCall: "O AGENDÁ UNA LLAMADA DE 30 MIN →",
+    introExplore: "RECORRER LA CIUDAD →",
+    introLabel: "Presentación de Remote & Partners",
     about: "ABOUT US",
     oNext: "SIGUIENTE ›",
     oNodes: "NODOS",
@@ -272,11 +289,11 @@ const UI = {
     returnCity: "ESC · VOLVER A CIUDAD REMOTE",
     privTitle: "EL TRABAJO ES REAL. LA INFORMACIÓN ES PRIVADA.",
     privBody:
-      "Por acuerdos de confidencialidad, la identidad de los proyectos y su documentación quedan protegidas. La experiencia se recorre por territorio, tipología y alcance.",
-    operations: "PROYECTOS RESIDENCIALES",
+      "Por acuerdos de confidencialidad, la identidad de los proyectos y su documentación quedan protegidas. La experiencia se recorre por territorio, tipología y alcance. Las cifras son la experiencia acumulada de nuestro equipo, anterior a la fundación del estudio en 2026.",
+    operations: "PROYECTOS DEL EQUIPO",
     typologies: "TIPOLOGÍAS",
     states: "ESTADOS",
-    totLine: "PROYECTOS REALIZADOS Y ENVIADOS",
+    totLine: "PROYECTOS ENTREGADOS POR NUESTRO EQUIPO",
     activeStates: "ESTADOS ACTIVOS",
     region: "REGIÓN",
     scope: "ALCANCE",
@@ -382,7 +399,7 @@ const UI = {
     level: "LEVEL",
     federated: "Federated model",
     connect: "CONNECT TO THE NETWORK",
-    channel: "REMOTE CHANNEL AVAILABLE",
+    channel: "FREE TEST SHEET AVAILABLE",
     cShort: "CONNECT",
     cShortRun: "CONNECTING...",
     cShortGo: "CONNECT →",
@@ -391,7 +408,7 @@ const UI = {
     nodeReady: "SECTOR 06 · EXTERNAL NODE ONLINE",
     newConn: "New connection",
     extNode: "EXTERNAL NODE",
-    tellUs: "Tell us about your project.",
+    tellUs: "Tell us about your project. Your first sheet is on us.",
     fName: "NAME",
     fCompany: "COMPANY / STUDIO",
     fEmail: "EMAIL",
@@ -402,6 +419,23 @@ const UI = {
     established: "Connection established",
     received: "RECEIVED",
     call30: "RATHER BOOK A 30 MIN CALL? →",
+    introEyebrow: "CONSTRUCTION DOCUMENTS · AUTOCAD · REVIT",
+    introTitle: "Construction documents for US homebuilders and architecture firms.",
+    introLead:
+      "A remote team that has delivered 2,500+ projects for builders in 8 states. We work inside your standards, your templates and your plan library.",
+    introItems: [
+      ["Lot-specific sets", "Plot plans, permit sets and options drawn lot by lot, ready to submit."],
+      ["Plan library", "New models, elevations and options, kept up to date when codes or specs change."],
+      ["Redlines", "Builder and plan-review comments resolved and resubmitted, tracked round by round."],
+      ["Revit & automation", "Federated models and LISP routines so your drawings come out the same every time."],
+    ],
+    introOfferK: "FREE TEST SHEET",
+    introOffer:
+      "Send us one of your plans and we'll draw a sheet at no cost, so you can judge the work before hiring us.",
+    introStart: "REQUEST YOUR FREE TEST SHEET →",
+    introCall: "OR BOOK A 30-MIN CALL →",
+    introExplore: "EXPLORE THE CITY →",
+    introLabel: "Remote & Partners introduction",
     about: "ABOUT US",
     oNext: "NEXT ›",
     oNodes: "NODES",
@@ -450,11 +484,11 @@ const UI = {
     returnCity: "ESC · RETURN TO REMOTE CITY",
     privTitle: "THE WORK IS REAL. THE DATA IS PRIVATE.",
     privBody:
-      "Due to confidentiality agreements, project identities and documentation remain protected. Explore our experience by territory, typology and scope.",
-    operations: "RESIDENTIAL PROJECTS",
+      "Due to confidentiality agreements, project identities and documentation remain protected. Explore our experience by territory, typology and scope. Figures reflect our team's combined experience before the studio was founded in 2026.",
+    operations: "PROJECTS BY OUR TEAM",
     typologies: "TYPOLOGIES",
     states: "STATES",
-    totLine: "PROJECTS DRAWN AND DELIVERED",
+    totLine: "PROJECTS DELIVERED BY OUR TEAM",
     activeStates: "ACTIVE STATES",
     region: "REGION",
     scope: "SCOPE",

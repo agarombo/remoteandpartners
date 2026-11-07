@@ -289,7 +289,7 @@ const UI = {
     returnCity: "ESC · VOLVER A CIUDAD REMOTE",
     privTitle: "EL TRABAJO ES REAL. LA INFORMACIÓN ES PRIVADA.",
     privBody:
-      "Por acuerdos de confidencialidad, la identidad de los proyectos y su documentación quedan protegidas. La experiencia se recorre por territorio, tipología y alcance. Las cifras son la experiencia acumulada de nuestro equipo, anterior a la fundación del estudio en 2026.",
+      "Por acuerdos de confidencialidad, la identidad y la documentación de los proyectos para builders quedan protegidas. La experiencia se recorre por territorio, tipología y alcance. Las cifras son la experiencia acumulada de nuestro equipo, anterior a la fundación del estudio en 2026.",
     operations: "PROYECTOS DEL EQUIPO",
     typologies: "TIPOLOGÍAS",
     states: "ESTADOS",
@@ -304,7 +304,17 @@ const UI = {
     pickType: "Elegí una tipología para ver la experiencia acumulada.",
     ty_sfr: "VIVIENDA UNIFAMILIAR",
     ty_twh: "VIVIENDA ADOSADA",
+    ty_edu: "EDUCATIVO",
+    ty_off: "OFICINAS",
+    ty_ind: "INDUSTRIAL",
+    ty_art: "INSTALACIÓN ARTÍSTICA",
     typology2: "TIPOLOGÍA",
+    pjTitle: "PROYECTOS DE TOMÁS LINARES",
+    pjBody:
+      "Proyectos en los que trabajó Tomás antes de fundar el estudio en 2026. El trabajo para builders sigue bajo confidencialidad, por eso no figura acá.",
+    pjCount: "PROYECTOS",
+    pjLegend:
+      "Los estados en naranja suman proyectos de Tomás Linares, anteriores al estudio.",
     tyd_sfr:
       "Vivienda unifamiliar con entramado de madera: el juego completo de obra, de la planta al detalle constructivo, para builders de Texas e Idaho.",
     tyd_twh:
@@ -484,7 +494,7 @@ const UI = {
     returnCity: "ESC · RETURN TO REMOTE CITY",
     privTitle: "THE WORK IS REAL. THE DATA IS PRIVATE.",
     privBody:
-      "Due to confidentiality agreements, project identities and documentation remain protected. Explore our experience by territory, typology and scope. Figures reflect our team's combined experience before the studio was founded in 2026.",
+      "Due to confidentiality agreements, the identities and documentation of our homebuilder projects remain protected. Explore our experience by territory, typology and scope. Figures reflect our team's combined experience before the studio was founded in 2026.",
     operations: "PROJECTS BY OUR TEAM",
     typologies: "TYPOLOGIES",
     states: "STATES",
@@ -499,7 +509,17 @@ const UI = {
     pickType: "Select a typology to see the accumulated experience.",
     ty_sfr: "SINGLE FAMILY",
     ty_twh: "TOWNHOUSE",
+    ty_edu: "EDUCATIONAL",
+    ty_off: "OFFICE",
+    ty_ind: "INDUSTRIAL",
+    ty_art: "ART INSTALLATION",
     typology2: "TYPOLOGY",
+    pjTitle: "PROJECTS BY TOMÁS LINARES",
+    pjBody:
+      "Projects Tomás worked on before the studio was founded in 2026. Homebuilder work remains confidential, so it is not listed here.",
+    pjCount: "PROJECTS",
+    pjLegend:
+      "States in orange also list projects by Tomás Linares, from before the studio.",
     tyd_sfr:
       "Single-family wood framing: the full construction set, from floor plan to wall section, for builders in Texas and Idaho.",
     tyd_twh:
@@ -621,6 +641,34 @@ const px2 = (d, i, f) =>
     ? EN[d.id].people[i][f]
     : d.people[i][f];
 
+/* Proyectos de Tomás Linares anteriores al estudio, sólo los de Estados
+   Unidos. Es su portafolio personal, no trabajo de Remote & Partners ni de
+   sus clientes de builders: el panel lo dice. A propósito no llevan nombre de
+   proyecto ni de cliente, sólo tipología y lugar: `ty` va como [es, en]. `tc` son los códigos de las cuatro tipologías de
+   Tomás que se exploran en TYPOLOGY (edu, off, ind, art); el resto de los
+   proyectos sólo lleva su tipología escrita. `st` es el estado del mapa
+   (null si la lista sólo dice "USA"). Puerto Rico queda afuera: no es un
+   estado. */
+const PORTFOLIO = [
+  { ty: ["Uso mixto", "Mixed-Use"], tc: [], loc: "New Jersey, USA", st: "NJ" },
+  { ty: ["Uso mixto", "Mixed-Use"], tc: [], loc: "California, USA", st: "CA" },
+  { ty: ["Educativo / Renovación", "Educational / Renovation"], tc: ["edu"], loc: "Berkeley, California", st: "CA" },
+  { ty: ["Oficinas", "Office"], tc: ["off"], loc: "Sacramento, California", st: "CA" },
+  { ty: ["Oficinas", "Office"], tc: ["off"], loc: "Sacramento, California", st: "CA" },
+  { ty: ["Residencial / Educativo / Industrial", "Residential / Educational / Industrial"], tc: ["edu", "ind"], loc: "San Francisco, California", st: "CA" },
+  { ty: ["Industrial", "Industrial"], tc: ["ind"], loc: "Sacramento, California", st: "CA" },
+  { ty: ["Comercial / Retail", "Commercial / Retail"], tc: [], loc: "USA", st: null },
+  { ty: ["Residencial multifamiliar", "Multifamily Residential"], tc: [], loc: "Henderson, Nevada", st: "NV" },
+  { ty: ["Residencial / Hotelería", "Residential / Hospitality"], tc: [], loc: "Florida, USA", st: "FL" },
+  { ty: ["Residencial", "Residential"], tc: [], loc: "Plainfield, New Jersey", st: "NJ" },
+  { ty: ["Residencial", "Residential"], tc: [], loc: "California, USA", st: "CA" },
+  { ty: ["Instalación artística", "Art Installation"], tc: ["art"], loc: "Sacramento, California", st: "CA" },
+  { ty: ["Aeropuerto / Instalación artística", "Airport / Art Installation"], tc: ["art"], loc: "Sacramento, California", st: "CA" },
+];
+/* lee un campo del portafolio en el idioma activo */
+const pf = (p, f) =>
+  Array.isArray(p[f]) ? p[f][LANG === "es" ? 0 : 1] : p[f];
+
 /* islas decorativas: [a, b, tamaño, semilla, tono] */
 const SCENERY = [
   [6, 0, 4.5, 101, "stone"],
@@ -700,6 +748,8 @@ export {
   u,
   dx,
   px2,
+  PORTFOLIO,
+  pf,
   SCENERY,
   LINKS,
   SHEETS,

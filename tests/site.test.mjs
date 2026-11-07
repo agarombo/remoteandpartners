@@ -124,11 +124,11 @@ test("territory and typology build on demand and remain interactive on revisit",
   await s.click("#nav .c-blue");
   await s.advance(6000);
   const region = s.find('#usmap [data-s="TX"]');
-  assert.equal(s.document.querySelectorAll("#usmap .st.on").length, 8);
+  assert.equal(s.document.querySelectorAll("#usmap .st.on").length, 12);
   await s.key("Enter", '#usmap [data-s="TX"]');
   assert.match(s.find("#panel").textContent, /TX/);
   await s.click('#panel [data-m="typology"]');
-  assert.equal(s.document.querySelectorAll("#typo .ty").length, 2);
+  assert.equal(s.document.querySelectorAll("#typo .ty").length, 6);
   await s.key(" ", '#typo [data-t="twh"]');
   assert.match(s.find("#panel").textContent, /TOWNHOUSE/);
   await s.key("Escape");
@@ -137,6 +137,46 @@ test("territory and typology build on demand and remain interactive on revisit",
   await s.advance(6000);
   await s.click('#panel [data-m="territory"]');
   assert.equal(s.find('#usmap [data-s="TX"]'), region);
+});
+
+test("territory and typology also list the US projects of Tomás, apart from the team figure", async (t) => {
+  const s = await setup(t);
+  await s.click("#nav .c-blue");
+  await s.advance(6000);
+  const items = () => s.document.querySelectorAll("#panel .items li").length;
+  /* sin elegir nada salen los 14, con la cifra del equipo aparte */
+  const text = s.find("#panel").textContent;
+  assert.equal(items(), 14);
+  assert.ok(text.includes("+2,500"));
+  for (const out of ["Argentina", "Germany", "Berlin", "Puerto Rico"])
+    assert.ok(!text.includes(out), out + " no debe figurar");
+  /* nunca nombres de clientes ni de proyectos: los datos ni siquiera los tienen */
+  const src = readFileSync("src/content.js", "utf8");
+  const block = src.match(/const PORTFOLIO = \[[\s\S]*?\n\];/)[0];
+  assert.equal((block.match(/\bty: \[/g) || []).length, 14);
+  assert.ok(!/\bn: /.test(block), "el portafolio no lleva nombres");
+  const tipos = new Set(
+    [...block.matchAll(/\bty: \["([^"]*)", "([^"]*)"\]/g)].flatMap((m) => [m[1], m[2]]),
+  );
+  for (const li of s.document.querySelectorAll("#panel .items li .t"))
+    assert.ok(tipos.has(li.textContent), li.textContent);
+  assert.equal(s.document.querySelectorAll("#usmap .st.pj").length, 4);
+  /* un estado de Tomás lista sólo los suyos */
+  await s.key("Enter", '#usmap [data-s="CA"]');
+  assert.equal(items(), 9);
+  await s.key("Enter", '#usmap [data-s="NV"]');
+  assert.equal(items(), 1);
+  /* los estados del equipo siguen sin nombres de proyecto */
+  await s.key("Enter", '#usmap [data-s="TX"]');
+  assert.ok(!s.find("#panel").textContent.includes("Tomás"));
+  /* tipologías: las dos del equipo más las cuatro de Tomás */
+  await s.click('#panel [data-m="typology"]');
+  assert.equal(s.document.querySelectorAll("#typo .ty").length, 6);
+  assert.equal(s.document.querySelectorAll("#typo .ty.pjt").length, 4);
+  for (const k of ["edu", "off", "ind", "art"]) {
+    await s.key(" ", '#typo [data-t="' + k + '"]');
+    assert.equal(items(), 2, k);
+  }
 });
 
 test("origin chapters build the city and restore it on exit", async (t) => {

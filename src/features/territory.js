@@ -3,6 +3,7 @@ import { byId, show, toggle, setAttribute } from "../core/dom.js";
 import {
   MAPY,
   WSTATES,
+  PJ,
   GRID,
   TYPES,
   mapSVG,
@@ -85,7 +86,8 @@ export function createFeature(app) {
       }
       const node = target.closest(".st.on, .ty");
       if (!node || !app.state.arrived) return;
-      if (node.dataset.s && !WSTATES[node.dataset.s]) return;
+      if (node.dataset.s && !WSTATES[node.dataset.s] && !PJ[node.dataset.s])
+        return;
       state.sel = node.dataset.s || node.dataset.t;
       const nodes = node.dataset.s
         ? map.querySelectorAll(".st")

@@ -430,6 +430,9 @@ body.mapmode #tags{ opacity:0; pointer-events:none; }
 .st-code{ font-family:"IBM Plex Mono",monospace; font-size:6px; letter-spacing:.08em;
           fill:var(--sky-0); text-anchor:start; }
 .st.sel .st-code{ font-weight:500; }
+/* estados con proyectos de Tomás: en naranja, para no leerse como los del equipo */
+.st.pj .st-cell.on{ fill:var(--orange-4); stroke:var(--orange-3); }
+.st.pj.on:hover .st-cell, .st.pj.on:focus-visible .st-cell{ fill:var(--orange-3); }
 
 .ty{ cursor:pointer; }
 .ty:focus{ outline:none; }
@@ -441,6 +444,10 @@ body.mapmode #tags{ opacity:0; pointer-events:none; }
 .ty-name{ font-family:"IBM Plex Mono",monospace; font-size:7px; letter-spacing:.18em;
           fill:var(--ink-soft); }
 .ty.sel .ty-name{ fill:var(--blue-4); }
+/* tipologías del portafolio de Tomás, también en naranja */
+.ty.pjt .ty-plate{ fill:var(--orange-1); }
+.ty.pjt.sel .ty-lead, .ty.pjt.sel .ty-dot{ stroke:var(--orange-3); fill:var(--orange-3); }
+.ty.pjt.sel .ty-name{ fill:var(--orange-4); }
 
 .modes{ display:flex; gap:4px; }
 .modes button{ appearance:none; background:none; cursor:pointer; flex:1;

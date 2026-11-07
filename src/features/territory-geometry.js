@@ -1,5 +1,5 @@
-import { u } from "../content.js";
-import { P, pts, n1, box } from "../geometry/primitives.js";
+import { u, PORTFOLIO } from "../content.js";
+import { P, pts, n1, box, windows } from "../geometry/primitives.js";
 const WSTATES = {
   TX: { sfr: 1 },
   ID: { sfr: 1 },
@@ -12,7 +12,13 @@ const WSTATES = {
 };
 const WTOTAL = 2500;
 /* territorio activo aunque todavía no tengamos la cifra cerrada */
-const WON = (s) => Object.prototype.hasOwnProperty.call(WSTATES, s);
+/* estados con proyectos de Tomás Linares: código -> índices en PORTFOLIO */
+const PJ = {};
+PORTFOLIO.forEach((p, i) => {
+  if (p.st) (PJ[p.st] = PJ[p.st] || []).push(i);
+});
+const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+const WON = (s) => has(WSTATES, s) || has(PJ, s);
 /* retícula de estados: mapa de operaciones, no de fronteras */
 const GRID = [
   ["AK", 0, 0],
@@ -67,13 +73,19 @@ const GRID = [
   ["TX", 3, 7],
   ["FL", 8, 7],
 ];
-/* dos tipologías reales, no cuatro inventadas */
+/* las dos del equipo y las cuatro que se suman del portafolio de Tomás */
 const TYPES = [
   ["sfr", "SINGLE FAMILY"],
   ["twh", "TOWNHOUSE"],
+  ["edu", "EDUCATIONAL"],
+  ["off", "OFFICE"],
+  ["ind", "INDUSTRIAL"],
+  ["art", "ART INSTALLATION"],
 ];
+/* de las que son de Tomás, no del equipo */
+const PJ_TYPES = new Set(["edu", "off", "ind", "art"]);
 const REGION = {};
-Object.keys(WSTATES)
+[...new Set([...Object.keys(WSTATES), ...Object.keys(PJ)])]
   .sort()
   .forEach((s, i) => {
     REGION[s] = String(i + 1).padStart(2, "0");
@@ -128,6 +140,14 @@ function miniModel(kind, cx, cy, sc) {
     );
   };
 
+  if (kind === "city") {
+    /* proyectos de Tomás: tres volúmenes de distinta altura sobre una base */
+    let s = slab(-0.6, -0.6, 12.2, 8.2, 0, 0.9, "slate");
+    s += slab(0.4, 1.4, 3.6, 4.4, 0.9, 5.5, "orange");
+    s += slab(4.6, 0.6, 3.2, 3.4, 0.9, 9, "orange");
+    s += slab(8.2, 2.4, 3.0, 4.2, 0.9, 3.4, "orange");
+    return s;
+  }
   if (kind === "twh") {
     /* tira de tres unidades pegadas, cada una con su hastial al frente */
     let s = slab(-0.6, -0.6, 16.2, 8.2, 0, 1, "slate");
@@ -182,9 +202,11 @@ function mapSVG() {
         W = CW - 4,
         H = CH - 4;
       const on = WON(code);
+      const pj = on && !has(WSTATES, code);
       let t =
         '<g class="st' +
         (on ? " on" : "") +
+        (pj ? " pj" : "") +
         '" data-s="' +
         code +
         '"' +
@@ -206,13 +228,18 @@ function mapSVG() {
         quad +
         '"/>';
       if (on) {
-        const sfr = !!WSTATES[code].sfr;
+        const sfr = !pj && !!WSTATES[code].sfr;
         /* la casita se planta en el punto del plano, pero se dibuja de pie */
         /* la volumetría de la tipología, plantada en el punto del plano */
         /* el modelo crece hacia la izquierda desde su origen: hay que anclarlo
          a la derecha de la celda para que caiga centrado */
         const p = mpt(X + (sfr ? 11 : 12), Y + 6);
-        t += miniModel(sfr ? "sfr" : "twh", p[0], p[1], sfr ? 0.82 : 0.66);
+        t += miniModel(
+          pj ? "city" : sfr ? "sfr" : "twh",
+          p[0],
+          p[1],
+          pj ? 0.62 : sfr ? 0.82 : 0.66,
+        );
         const lp = mpt(X + 4, Y + H - 3);
         t +=
           '<text class="st-code" x="' +
@@ -374,16 +401,67 @@ function typoModel(k, x, y) {
     return s;
   }
 
+  if (k === "edu") {
+    /* escuela de dos alas en L alrededor de un patio, con torre de acceso */
+    s += box(x + 1.3, y + 1.5, 1.9, 1.1, 0.1, 0.03, "stone"); /* patio */
+    s += box(x + 0.28, y + 0.46, 3.1, 0.9, 0.1, 0.7, "orange"); /* ala larga, al fondo */
+    s += windows(x + 0.28, y + 0.46, 3.1, 0.9, 0.1, 0.7);
+    s += box(x + 0.24, y + 0.42, 3.18, 0.98, 0.8, 0.06, "slate");
+    s += box(x + 0.28, y + 1.36, 0.9, 1.3, 0.1, 0.7, "orange"); /* ala corta, al frente */
+    s += windows(x + 0.28, y + 1.36, 0.9, 1.3, 0.1, 0.7);
+    s += box(x + 0.24, y + 1.32, 0.98, 1.38, 0.8, 0.06, "slate");
+    s += box(x + 0.34, y + 1.0, 0.5, 0.5, 0.86, 0.5, "orange"); /* torre de acceso */
+    s += box(x + 0.3, y + 0.96, 0.58, 0.58, 1.36, 0.05, "slate");
+    return s;
+  }
+
+  if (k === "off") {
+    /* torre de oficinas: vidrio entre antepechos corridos y equipos en cubierta */
+    s += box(x + 0.5, y + 0.6, 2.6, 1.7, 0.1, 1.5, "orange");
+    s += windows(x + 0.5, y + 0.6, 2.6, 1.7, 0.1, 1.5);
+    for (const z of [0.5, 0.9, 1.3])
+      s += box(x + 0.46, y + 0.56, 2.68, 1.78, z, 0.07, "slate");
+    s += box(x + 1.9, y + 0.9, 0.7, 0.55, 1.6, 0.28, "slate");
+    return s;
+  }
+
+  if (k === "ind") {
+    /* nave industrial a dos aguas, con andén de carga y chimenea */
+    s += box(x + 0.2, y + 0.5, 3.2, 2.0, 0, 0.08, "slate");
+    s += gabX(x + 0.3, y + 0.6, 3.0, 1.5, 0.08, 0.58, 0.34, "orange", "orange");
+    s += box(x + 0.4, y + 2.1, 1.7, 0.32, 0.08, 0.22, "slate");
+    s += box(x + 2.9, y + 0.7, 0.34, 0.34, 0.66, 1.0, "slate");
+    return s;
+  }
+
+  if (k === "art") {
+    /* instalación: una figura en ocho levantada sobre un zócalo, como un analema */
+    s += box(x + 0.4, y + 0.5, 2.8, 1.9, 0, 0.1, "slate");
+    const posts = [];
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      posts.push([
+        x + 1.8 + 1.05 * Math.sin(a),
+        y + 1.45 + 0.55 * Math.sin(2 * a),
+        0.4 + 0.65 * (0.5 + 0.5 * Math.cos(a)),
+      ]);
+    }
+    posts.sort((p, q) => p[0] + p[1] - (q[0] + q[1]));
+    for (const p of posts) {
+      s += box(p[0] - 0.04, p[1] - 0.04, 0.08, 0.08, 0.1, p[2], "slate");
+      s += box(p[0] - 0.08, p[1] - 0.08, 0.16, 0.16, 0.1 + p[2], 0.08, "orange");
+    }
+    return s;
+  }
+
   return s;
 }
 
 function typologySVG() {
-  const spots = [
-    [-4.6, -1.9],
-    [0.9, -1.9],
-    [-4.6, 1.8],
-    [0.9, 1.8],
-  ];
+  const spots = TYPES.map((_, i) => [
+    i % 2 ? 0.9 : -4.6,
+    -1.9 + 3.7 * Math.floor(i / 2),
+  ]);
   let s = "";
   TYPES.forEach((t, i) => {
     const x = spots[i][0],
@@ -393,7 +471,9 @@ function typologySVG() {
     const c = left ? P(x - 0.5, y + 3.1, 0) : P(x + 3.7, y - 0.5, 0);
     const lx = c[0] + (left ? -13 : 13);
     s +=
-      '<g class="ty" data-t="' +
+      '<g class="ty' +
+      (PJ_TYPES.has(t[0]) ? " pjt" : "") +
+      '" data-t="' +
       t[0] +
       '" tabindex="0" role="button" aria-label="' +
       t[1] +
@@ -442,4 +522,15 @@ function typologySVG() {
   return s;
 }
 
-export { WSTATES, WTOTAL, TYPES, REGION, GRID, MAPY, mapSVG, typologySVG };
+export {
+  WSTATES,
+  WTOTAL,
+  TYPES,
+  PJ,
+  PJ_TYPES,
+  REGION,
+  GRID,
+  MAPY,
+  mapSVG,
+  typologySVG,
+};

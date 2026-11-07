@@ -16,7 +16,7 @@ const PHOTOS = {
    BOOKING: pegá acá el link de tu agenda (Google Calendar → Programación de citas
    → Compartir → copiar el enlace de la página de reservas). Mientras esté vacío,
    el botón abre un correo a MAIL. */
-const MAIL = "agustin@remoteandpartners.com";
+const MAIL = "info@remoteandpartners.com";
 const BOOKING = "https://calendar.app.google/tqNjNJH1k4DsQqdP7";
 
 const DISTRICTS = [

@@ -207,7 +207,7 @@ test("contact protocol and composed email preserve user input", async (t) => {
     new s.window.Event("input", { bubbles: true }),
   );
   const href = decodeURIComponent(s.find("#fSend").href);
-  assert.match(href, /^mailto:agustin@remoteandpartners.com/);
+  assert.match(href, /^mailto:info@remoteandpartners.com/);
   assert.match(href, /Test & User/);
   assert.match(href, /Architecture studio/);
   await s.key("Escape");

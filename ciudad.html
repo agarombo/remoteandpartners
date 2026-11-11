@@ -315,11 +315,17 @@ body{
 .brand i{ font-style:normal; font-weight:500; font-size:9.5px; letter-spacing:.295em; color:var(--coral); }
 .mono{ font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10px; letter-spacing:.16em; color:var(--ink-soft); }
 
-nav.dist{ pointer-events:auto; display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+/* el índice es una tarjeta, no texto suelto sobre la escena: así se lee como
+   lo que es, un menú de cuatro áreas distintas. Fondo casi opaco y sin blur:
+   desenfocar en vivo lo que pasa detrás mientras la cámara viaja es caro. */
+nav.dist{ pointer-events:auto; display:flex; flex-direction:column; align-items:stretch; gap:2px;
+          padding:9px 18px 9px 16px;
+          background:var(--panel); border:1px solid var(--panel-line); border-radius:16px;
+          box-shadow:0 14px 40px rgba(36,46,61,.12); }
 nav.dist button{
-  appearance:none; background:none; border:0; cursor:pointer; color:var(--ink-soft);
-  font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.20em;
-  padding:5px 0 5px 14px; display:flex; align-items:center; gap:9px;
+  appearance:none; background:none; border:0; cursor:pointer; color:var(--ink);
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.20em;
+  padding:7px 0; display:flex; align-items:center; gap:10px; text-align:left;
   transition:color .25s;
 }
 nav.dist button i{ width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.5; transition:opacity .25s, transform .25s; }
@@ -846,7 +852,8 @@ body.originmode.wiremode #links .link.built{
      chicas en un teléfono como para ser el único modo de navegar */
   nav.dist{ flex-direction:row; align-items:center; justify-content:flex-start; gap:0;
             overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none;
-            margin:0 -14px; padding:2px 14px 0; }
+            margin:4px 0 0; padding:0 0 0 14px; border-radius:12px;
+            box-shadow:0 8px 24px rgba(36,46,61,.10); }
   nav.dist::-webkit-scrollbar{ display:none; }
   nav.dist button{ flex:none; padding:9px 12px 9px 0; font-size:10px;
                    letter-spacing:.13em; gap:6px; }

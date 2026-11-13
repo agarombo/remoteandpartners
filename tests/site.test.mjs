@@ -179,6 +179,21 @@ test("territory and typology also list the US projects of Tomás, apart from the
   }
 });
 
+test("the intro card has a visible close button that works like Esc and Explore", async (t) => {
+  const s = await setup(t);
+  const card = s.find("#intro");
+  assert.ok(!card.classList.contains("off"));
+  const x = s.find("#introX");
+  assert.ok(x, "falta el botón de cerrar");
+  assert.ok(x.getAttribute("aria-label").length > 0);
+  await s.click("#introX");
+  assert.ok(card.classList.contains("off"));
+  assert.equal(card.getAttribute("aria-hidden"), "true");
+  /* en español el botón también se nombra */
+  await s.click("#langBtn");
+  assert.match(s.find("#introX").getAttribute("aria-label"), /Cerrar/);
+});
+
 test("origin chapters build the city and restore it on exit", async (t) => {
   const s = await setup(t);
   await s.click("#nav .c-magenta");

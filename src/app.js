@@ -171,6 +171,11 @@ function renderIntro() {
       encodeURIComponent(LANG === "en" ? "30 min call" : "Llamada de 30 min");
   introBox.setAttribute("aria-label", u("introLabel"));
   introBox.innerHTML =
+    '<button class="intro-x" id="introX" type="button" title="' +
+    u("introClose") +
+    '" aria-label="' +
+    u("introClose") +
+    '">×</button>' +
     '<div class="mono intro-k">' +
     u("introEyebrow") +
     "</div>" +
@@ -255,7 +260,7 @@ const routes = {
 function action(event) {
   const target = event.target;
   if (!target.closest) return;
-  if (target.closest("#introGo")) {
+  if (target.closest("#introGo, #introX")) {
     setIntro(false);
     sound.tick();
     return;

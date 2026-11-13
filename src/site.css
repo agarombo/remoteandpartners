@@ -1119,7 +1119,7 @@ body:not([data-view="city"]) .padlight{
 }
 .intro.off{ opacity:0; transform:translateY(14px); pointer-events:none; visibility:hidden;
             transition:opacity .35s ease, transform .5s ease, visibility 0s .5s; }
-.intro .intro-k{ font-size:10px; letter-spacing:.2em; color:var(--magenta-3); }
+.intro .intro-k{ font-size:10px; letter-spacing:.2em; color:var(--magenta-3); padding-right:36px; }
 .intro h1{ font-family:"Metropolis",system-ui,sans-serif; font-weight:600; margin:0;
            font-size:clamp(23px,2.3vw,30px); line-height:1.12; letter-spacing:.005em; text-wrap:balance; }
 .intro .intro-lead{ margin:0; font-weight:300; font-size:15.5px; line-height:1.55; color:var(--ink); }
@@ -1143,6 +1143,15 @@ body:not([data-view="city"]) .padlight{
 .intro-call, .intro-mail{ font-size:10px; letter-spacing:.14em; color:var(--ink-soft); text-decoration:none; align-self:flex-start; }
 .intro-call:hover, .intro-mail:hover{ color:var(--ink); }
 .intro-mail{ text-transform:lowercase; letter-spacing:.08em; }
+/* cierre visible: no todo el mundo sabe que Esc la cierra. Queda fijo arriba a
+   la derecha aunque la tarjeta se desplace, sin empujar el contenido. */
+.intro-x{ position:sticky; top:calc(10px - clamp(22px,2.4vw,32px)); z-index:2; align-self:flex-end; flex:none;
+          width:32px; height:32px; margin:-14px -14px -34px 0; border-radius:50%;
+          display:flex; align-items:center; justify-content:center;
+          font-family:"Metropolis",sans-serif; font-size:20px; line-height:1; font-weight:300;
+          color:var(--ink); background:var(--panel); border:1px solid var(--panel-line);
+          cursor:pointer; transition:border-color .2s; }
+.intro-x:hover, .intro-x:focus-visible{ border-color:var(--ink); outline:none; }
 @media (max-width:820px){
   .intro{ left:0; right:0; top:auto; bottom:0; width:100%; max-height:76%;
           border-radius:16px 16px 0 0; border-bottom:0; padding:22px 18px calc(22px + env(safe-area-inset-bottom)); }

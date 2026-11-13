@@ -227,7 +227,7 @@ const UI = {
     introEyebrow: "DOCUMENTACIÓN DE OBRA · AUTOCAD · REVIT",
     introTitle: "Planos de obra para constructoras y estudios de arquitectura de EE.UU.",
     introLead:
-      "Un equipo remoto que ya entregó más de 2.500 proyectos para constructoras en 8 estados. Trabajamos dentro de tus estándares, tus plantillas y tu biblioteca de modelos.",
+      "Nuestro equipo ha dibujado más de 2.500 juegos de permiso y obra para constructoras de EE.UU.: experiencia acumulada trabajando para otros estudios, antes de Remote &amp; Partners. Trabajamos dentro de tus estándares, tus plantillas y tu biblioteca de modelos.",
     introItems: [
       ["Sets por lote", "Planos de implantación, sets de permiso y options dibujados lote por lote, listos para presentar."],
       ["Biblioteca de modelos", "Modelos nuevos, fachadas y options, y su actualización cuando cambian el código o las especificaciones."],
@@ -317,7 +317,7 @@ const UI = {
     pjLegend:
       "Los estados en naranja suman proyectos de Tomás Linares, anteriores al estudio.",
     tyd_sfr:
-      "Vivienda unifamiliar con entramado de madera: el juego completo de obra, de la planta al detalle constructivo, para builders de Texas e Idaho.",
+      "Vivienda unifamiliar con entramado de madera: el juego completo de obra, de la planta al detalle constructivo, para constructoras de EE.UU.",
     tyd_twh:
       "Vivienda adosada y townhouse: unidades repetidas con medianeras, en corredores urbanos del noreste y del área de Washington.",
     tye_sfr: [
@@ -433,7 +433,7 @@ const UI = {
     introEyebrow: "CONSTRUCTION DOCUMENTS · AUTOCAD · REVIT",
     introTitle: "Construction documents for US homebuilders and architecture firms.",
     introLead:
-      "A remote team that has delivered 2,500+ projects for builders in 8 states. We work inside your standards, your templates and your plan library.",
+      "Our team has drawn 2,500+ permit and construction sets for US homebuilders: experience built working for other studios, before Remote &amp; Partners. We work inside your standards, your templates and your plan library.",
     introItems: [
       ["Lot-specific sets", "Plot plans, permit sets and options drawn lot by lot, ready to submit."],
       ["Plan library", "New models, elevations and options, kept up to date when codes or specs change."],
@@ -523,7 +523,7 @@ const UI = {
     pjLegend:
       "States in orange also list projects by Tomás Linares, from before the studio.",
     tyd_sfr:
-      "Single-family wood framing: the full construction set, from floor plan to wall section, for builders in Texas and Idaho.",
+      "Single-family wood framing: the full construction set, from floor plan to wall section, for US homebuilders.",
     tyd_twh:
       "Townhouse and attached housing: repeated units with party walls, in Northeast corridors and the Washington metro area.",
     tye_sfr: [
